@@ -337,9 +337,9 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       <AdminSidebar />
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <div className="lg:pl-64 flex flex-col min-h-screen min-w-0">
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 py-4 px-6 md:px-10 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+        <header className="bg-white border-b border-slate-200 py-4 px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
           <div className="flex items-center space-x-3">
             <div>
               <h1 className="text-base font-black text-slate-950 leading-tight">Main SAP ABAP Admin Panel</h1>
@@ -347,71 +347,71 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-        <div className="flex items-center space-x-3">
-          <Link
-            href="/admin/qp"
-            className="inline-flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 px-3.5 rounded-lg transition-all shadow-xs"
-          >
-            <FileCode className="w-4 h-4 text-indigo-600" />
-            <span>Q&P (Question Papers)</span>
-          </Link>
-
-          <div className="relative">
-            <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3.5 rounded-lg transition-all shadow-xs"
+          <div className="flex items-center space-x-3">
+            <Link
+              href="/admin/qp"
+              className="inline-flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 px-3.5 rounded-lg transition-all shadow-xs"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export Options</span>
-              <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
+              <FileCode className="w-4 h-4 text-indigo-600" />
+              <span>Q&P (Question Papers)</span>
+            </Link>
+
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3.5 rounded-lg transition-all shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Options</span>
+                <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-40 text-xs text-slate-700">
+                  <button
+                    onClick={() => handleExport('csv')}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    <span>Export CSV (.csv)</span>
+                  </button>
+                  <button
+                    onClick={() => handleExport('excel')}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                    <span>Export Excel (.xls)</span>
+                  </button>
+                  <button
+                    onClick={() => handleExport('json')}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
+                  >
+                    <FileJson className="w-4 h-4 text-amber-600" />
+                    <span>Export JSON (.json)</span>
+                  </button>
+                  <div className="border-t border-slate-100 my-1"></div>
+                  <button
+                    onClick={handlePrint}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium text-slate-900"
+                  >
+                    <Printer className="w-4 h-4 text-slate-600" />
+                    <span>Print / Save PDF</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center space-x-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold py-2 px-3.5 rounded-lg transition-all"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Logout</span>
             </button>
-
-            {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-40 text-xs text-slate-700">
-                <button
-                  onClick={() => handleExport('csv')}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                  <span>Export CSV (.csv)</span>
-                </button>
-                <button
-                  onClick={() => handleExport('excel')}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                  <span>Export Excel (.xls)</span>
-                </button>
-                <button
-                  onClick={() => handleExport('json')}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
-                >
-                  <FileJson className="w-4 h-4 text-amber-600" />
-                  <span>Export JSON (.json)</span>
-                </button>
-                <div className="border-t border-slate-100 my-1"></div>
-                <button
-                  onClick={handlePrint}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium text-slate-900"
-                >
-                  <Printer className="w-4 h-4 text-slate-600" />
-                  <span>Print / Save PDF</span>
-                </button>
-              </div>
-            )}
           </div>
+        </header>
 
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center space-x-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold py-2 px-3.5 rounded-lg transition-all"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="w-full px-6 md:px-8 py-6 space-y-6 min-w-0">
 
         {/* Dedicated Trainer Admin Panels Grid & Management */}
         <div className="space-y-4">
@@ -528,53 +528,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Dedicated Campus Admin Panels Grid */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-              <Building className="w-4.5 h-4.5 text-blue-600" />
-              <span>Campus Admin Panels</span>
-            </h2>
-            <span className="text-xs text-slate-500">Separate admin panel for each campus</span>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {CAMPUSES.map((campus) => {
-              const campusData = stats?.campusStats?.[campus] || { total: 0, avgScore: 0, passed: 0 };
-              return (
-                <div
-                  key={campus}
-                  className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:border-blue-300 transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-extrabold text-xs">
-                        CAMPUS
-                      </span>
-                      <span className="text-xs font-bold text-slate-500">
-                        {campusData.total} Attempts
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-black text-slate-900 mb-1">{campus} Campus</h3>
-                    <div className="text-xs text-slate-500 space-y-1 mb-4">
-                      <div>Avg Score: <strong className="text-slate-800">{campusData.avgScore} / 10</strong></div>
-                      <div>Passed Candidates: <strong className="text-emerald-700">{campusData.passed}</strong></div>
-                    </div>
-                  </div>
-
-                  <Link
-                    href={`/admin/campus/${campus.toLowerCase()}`}
-                    className="w-full inline-flex items-center justify-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all shadow-xs"
-                  >
-                    <span>Open {campus} Campus Admin</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Filter Controls Panel */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs mb-6 space-y-4">
