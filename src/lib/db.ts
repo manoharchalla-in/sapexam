@@ -437,6 +437,263 @@ if (templateCount === 0) {
   });
 }
 
+// Ensure Question Bank Table
+db.exec(`
+  CREATE TABLE IF NOT EXISTS question_bank (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_text TEXT NOT NULL,
+    question_type TEXT NOT NULL DEFAULT 'Single Choice',
+    option_a TEXT DEFAULT '',
+    option_b TEXT DEFAULT '',
+    option_c TEXT DEFAULT '',
+    option_d TEXT DEFAULT '',
+    configuration TEXT DEFAULT '{}',
+    correct_answer TEXT NOT NULL,
+    marks REAL NOT NULL DEFAULT 1,
+    negative_marks REAL DEFAULT 0,
+    difficulty TEXT DEFAULT 'Medium',
+    topic TEXT DEFAULT 'SAP ABAP Fundamentals',
+    explanation TEXT DEFAULT '',
+    status TEXT DEFAULT 'Active',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+`);
+
+// Add missing columns if table existed prior
+try {
+  const qbCols = (db.prepare(`PRAGMA table_info(question_bank)`).all() as Array<{ name: string }>).map((c) => c.name);
+  if (!qbCols.includes('option_a')) db.exec(`ALTER TABLE question_bank ADD COLUMN option_a TEXT DEFAULT ''`);
+  if (!qbCols.includes('option_b')) db.exec(`ALTER TABLE question_bank ADD COLUMN option_b TEXT DEFAULT ''`);
+  if (!qbCols.includes('option_c')) db.exec(`ALTER TABLE question_bank ADD COLUMN option_c TEXT DEFAULT ''`);
+  if (!qbCols.includes('option_d')) db.exec(`ALTER TABLE question_bank ADD COLUMN option_d TEXT DEFAULT ''`);
+  if (!qbCols.includes('topic')) db.exec(`ALTER TABLE question_bank ADD COLUMN topic TEXT DEFAULT 'SAP ABAP Fundamentals'`);
+  if (!qbCols.includes('difficulty')) db.exec(`ALTER TABLE question_bank ADD COLUMN difficulty TEXT DEFAULT 'Medium'`);
+} catch (e) {}
+
+// Seed Question Bank if empty
+const bankCount = (db.prepare(`SELECT COUNT(*) as count FROM question_bank`).get() as { count: number })?.count || 0;
+if (bankCount === 0) {
+  const now = new Date().toISOString();
+  const insertBank = db.prepare(`
+    INSERT INTO question_bank (question_text, question_type, option_a, option_b, option_c, option_d, correct_answer, marks, difficulty, topic, explanation, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const initialBankQuestions = [
+    {
+      question_text: 'Which statement is used to define a modern inline data declaration in ABAP 7.40+?',
+      option_a: 'DATA(lv_val) = 10.',
+      option_b: 'DEFINE lv_val = 10.',
+      option_c: 'VAR lv_val TYPE i VALUE 10.',
+      option_d: 'LET lv_val = 10.',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Beginner',
+      topic: 'SAP ABAP Fundamentals',
+      explanation: 'DATA(...) syntax provides inline declaration introduced in ABAP 7.40.',
+    },
+    {
+      question_text: 'What is the primary difference between a Hashed Table and a Standard Table in SAP ABAP?',
+      option_a: 'Hashed tables support index-based access with linear search time.',
+      option_b: 'Hashed tables use a unique key with O(1) constant search time.',
+      option_c: 'Standard tables are always sorted automatically.',
+      option_d: 'Hashed tables do not require a UNIQUE KEY specification.',
+      correct_answer: 'B',
+      marks: 1,
+      difficulty: 'Intermediate',
+      topic: 'Internal Tables & Work Areas',
+      explanation: 'Hashed tables are accessed using a hash algorithm providing O(1) constant time.',
+    },
+    {
+      question_text: 'Which transaction code is used for the ABAP Data Dictionary to create database tables, structures, and data elements?',
+      option_a: 'SE38',
+      option_b: 'SE80',
+      option_c: 'SE11',
+      option_d: 'SE24',
+      correct_answer: 'C',
+      marks: 1,
+      difficulty: 'Beginner',
+      topic: 'ABAP Data Dictionary (SE11)',
+      explanation: 'SE11 is the ABAP Data Dictionary transaction.',
+    },
+    {
+      question_text: 'Which ABAP internal table statement performs a binary search efficiently on a sorted dataset?',
+      option_a: 'READ TABLE itab WITH KEY k = val BINARY SEARCH.',
+      option_b: 'SELECT * FROM itab WHERE k = val.',
+      option_c: 'LOOP AT itab WHERE k = val FAST SEARCH.',
+      option_d: 'SEARCH itab FOR val.',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Beginner',
+      topic: 'Internal Tables & Work Areas',
+      explanation: 'BINARY SEARCH on a Standard internal table sorted by the key field achieves O(log n) performance.',
+    },
+    {
+      question_text: 'In ABAP Objects (SE24), which visibility section allows access ONLY to the defining class and its subclasses?',
+      option_a: 'PUBLIC SECTION',
+      option_b: 'PROTECTED SECTION',
+      option_c: 'PRIVATE SECTION',
+      option_d: 'FRIENDS SECTION',
+      correct_answer: 'B',
+      marks: 1,
+      difficulty: 'Intermediate',
+      topic: 'ABAP Objects (OOP)',
+      explanation: 'PROTECTED components are accessible by the class itself and any subclasses inheriting from it.',
+    },
+    {
+      question_text: 'What is the correct syntax for a constructor method in an ABAP class?',
+      option_a: 'METHODS init.',
+      option_b: 'METHODS constructor.',
+      option_c: 'METHODS create_instance.',
+      option_d: 'METHODS __construct.',
+      correct_answer: 'B',
+      marks: 1,
+      difficulty: 'Beginner',
+      topic: 'ABAP Objects (OOP)',
+      explanation: 'The instance constructor method in ABAP is always named "constructor".',
+    },
+    {
+      question_text: 'Which Core Data Services (CDS) annotation is mandatory to define a view entity in modern S/4HANA development?',
+      option_a: '@AbapCatalog.sqlViewName',
+      option_b: '@AccessControl.authorizationCheck: #NOT_REQUIRED',
+      option_c: 'define view entity ViewName as select from ...',
+      option_d: '@EndUserText.label',
+      correct_answer: 'C',
+      marks: 1,
+      difficulty: 'Advanced',
+      topic: 'Open SQL & CDS Views',
+      explanation: 'CDS View Entities use "define view entity" without generating an obsolete SE11 SQL DDIC view.',
+    },
+    {
+      question_text: 'What is the purpose of ABAP Managed Database Procedures (AMDP) in SAP HANA?',
+      option_a: 'To execute ABAP code on client side in SAP GUI.',
+      option_b: 'To write database procedures directly in SQLScript inside ABAP classes executed in HANA DB.',
+      option_c: 'To manage SAP user passwords in transaction SU01.',
+      option_d: 'To translate SAP SmartForms to Adobe Forms.',
+      correct_answer: 'B',
+      marks: 1,
+      difficulty: 'Advanced',
+      topic: 'SAP S/4HANA & RAP',
+      explanation: 'AMDP allows implementing SQLScript database procedures within ABAP class methods for pushdown processing.',
+    },
+    {
+      question_text: 'Which transaction code is used to analyze SQL performance, trace table accesses, and detect bottleneck statements?',
+      option_a: 'ST05',
+      option_b: 'SM50',
+      option_c: 'SM12',
+      option_d: 'ST22',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Intermediate',
+      topic: 'Performance & Debugging',
+      explanation: 'ST05 is the Performance Trace tool for SQL, RFC, Enqueue, and Table Buffer analysis.',
+    },
+    {
+      question_text: 'What is the purpose of the FOR ALL ENTRIES IN clause in Open SQL?',
+      option_a: 'It locks all database table entries exclusively.',
+      option_b: 'It fetches database records matching keys present in an internal table.',
+      option_c: 'It deletes all rows in an internal table.',
+      option_d: 'It converts internal table rows into XML format.',
+      correct_answer: 'B',
+      marks: 1,
+      difficulty: 'Intermediate',
+      topic: 'Open SQL & CDS Views',
+      explanation: 'FOR ALL ENTRIES joins an internal table with a database table in Open SQL. The internal table must be checked for NOT INITIAL beforehand.',
+    },
+    {
+      question_text: 'In the SAP RESTful Application Programming Model (RAP), which object defines transactional behavior such as Create, Update, and Delete?',
+      option_a: 'Behavior Definition (BDEF)',
+      option_b: 'Service Definition (SRVD)',
+      option_c: 'Service Binding (SRVB)',
+      option_d: 'Projection View',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Advanced',
+      topic: 'SAP S/4HANA & RAP',
+      explanation: 'A Behavior Definition (BDEF) describes standard operations, actions, validations, and determinations in RAP.',
+    },
+    {
+      question_text: 'Which ABAP runtime error indicates an unhandled division by zero in mathematical calculations?',
+      option_a: 'COMPUTE_ZERODIVIDE',
+      option_b: 'ITAB_LINE_NOT_FOUND',
+      option_c: 'DATA_OFFSET_NEGATIVE',
+      option_d: 'TIME_OUT',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Beginner',
+      topic: 'Performance & Debugging',
+      explanation: 'CX_SY_ZERODIVIDE raises runtime error COMPUTE_ZERODIVIDE when division by zero occurs.',
+    },
+    {
+      question_text: 'Which function module is used to display an interactive ALV grid in classical ABAP reports?',
+      option_a: 'REUSE_ALV_GRID_DISPLAY',
+      option_b: 'POPUP_TO_CONFIRM',
+      option_c: 'GUI_DOWNLOAD',
+      option_d: 'CONVERT_TO_LOCAL_CURRENCY',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Beginner',
+      topic: 'SAP ABAP Fundamentals',
+      explanation: 'REUSE_ALV_GRID_DISPLAY renders standard interactive ALV grids.',
+    },
+    {
+      question_text: 'What transaction code is used to explore and test SAP standard BAPIs (Business Application Programming Interfaces)?',
+      option_a: 'BAPI',
+      option_b: 'SE37',
+      option_c: 'BALE',
+      option_d: 'BD87',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Intermediate',
+      topic: 'ABAP Data Dictionary (SE11)',
+      explanation: 'Transaction BAPI launches the Business Object Repository and BAPI Explorer.',
+    },
+    {
+      question_text: 'In SAP NetWeaver Gateway (SEGW), which method is redefined in the DPC_EXT class to retrieve multiple entity records (e.g. GET entity set)?',
+      option_a: '<ENTITY>_GET_ENTITYSET',
+      option_b: '<ENTITY>_CREATE_ENTITY',
+      option_c: '<ENTITY>_UPDATE_ENTITY',
+      option_d: '<ENTITY>_DELETE_ENTITY',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Advanced',
+      topic: 'SAP S/4HANA & RAP',
+      explanation: '<EntityName>_GET_ENTITYSET is executed when an OData query requests a collection of entities.',
+    },
+    {
+      question_text: 'Which enhancement framework technique allows adding custom code at explicit enhancement spots introduced in ABAP 7.0+?',
+      option_a: 'ENHANCEMENT-POINT / ENHANCEMENT-SECTION',
+      option_b: 'User Exits in include files',
+      option_c: 'Customer Exits with SMOD/CMOD',
+      option_d: 'Modification Assistant',
+      correct_answer: 'A',
+      marks: 1,
+      difficulty: 'Intermediate',
+      topic: 'ABAP Objects (OOP)',
+      explanation: 'The New Enhancement Framework uses ENHANCEMENT-POINT and ENHANCEMENT-SECTION statements.',
+    },
+  ];
+
+  initialBankQuestions.forEach((q) => {
+    insertBank.run(
+      q.question_text,
+      'Single Choice',
+      q.option_a,
+      q.option_b,
+      q.option_c,
+      q.option_d,
+      q.correct_answer,
+      q.marks,
+      q.difficulty,
+      q.topic,
+      q.explanation,
+      now,
+      now
+    );
+  });
+}
+
 export interface AssessmentRecord {
   id: string;
   candidate_name: string;
@@ -2041,6 +2298,147 @@ export function reorderExamQuestions(examId: number, questionIdsInOrder: number[
   });
   updateMany(questionIdsInOrder);
   return true;
+}
+
+export function getQuestionBankList(filter?: { topic?: string; search?: string }) {
+  let sql = `SELECT * FROM question_bank WHERE status = 'Active'`;
+  const params: any[] = [];
+  if (filter?.topic && filter.topic !== 'all') {
+    sql += ` AND topic = ?`;
+    params.push(filter.topic);
+  }
+  if (filter?.search) {
+    sql += ` AND (question_text LIKE ? OR explanation LIKE ?)`;
+    params.push(`%${filter.search}%`, `%${filter.search}%`);
+  }
+  sql += ` ORDER BY id ASC`;
+  return db.prepare(sql).all(...params);
+}
+
+export function importBankQuestionsToCollegeExam(examId: number, bankIds: number[]): number {
+  if (!bankIds || bankIds.length === 0) return 0;
+  const existing = getQuestionsByExamId(examId);
+  let nextOrder = existing.length > 0 ? Math.max(...existing.map((q) => q.order_index)) + 1 : 1;
+
+  const placeholders = bankIds.map(() => '?').join(',');
+  const stmt = db.prepare(`SELECT * FROM question_bank WHERE id IN (${placeholders})`);
+  const bankQuestions = stmt.all(...bankIds) as any[];
+
+  let imported = 0;
+  const insertStmt = db.prepare(`
+    INSERT INTO college_exam_questions (
+      exam_id, question_text, question_type, option_a, option_b, option_c, option_d,
+      correct_answer, marks, explanation, order_index, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const now = new Date().toISOString();
+  const tx = db.transaction(() => {
+    bankQuestions.forEach((bq) => {
+      insertStmt.run(
+        examId,
+        bq.question_text,
+        bq.question_type || 'Single Choice',
+        bq.option_a || '',
+        bq.option_b || '',
+        bq.option_c || '',
+        bq.option_d || '',
+        bq.correct_answer || 'A',
+        bq.marks || 1,
+        bq.explanation || '',
+        nextOrder++,
+        now
+      );
+      imported++;
+    });
+  });
+
+  tx();
+  updateCollegeExam(examId, {});
+  return imported;
+}
+
+export function populateCollegeExamFromTemplate(examId: number, templateId: number): number {
+  const template = getExamTemplateById(templateId);
+  if (!template) return 0;
+
+  // Retrieve up to template.total_questions from question_bank (or general pool)
+  const bankQuestions = db.prepare(`
+    SELECT * FROM question_bank WHERE status = 'Active' ORDER BY RANDOM() LIMIT ?
+  `).all(template.total_questions || 10) as any[];
+
+  let imported = 0;
+  if (bankQuestions.length > 0) {
+    const insertStmt = db.prepare(`
+      INSERT INTO college_exam_questions (
+        exam_id, question_text, question_type, option_a, option_b, option_c, option_d,
+        correct_answer, marks, explanation, order_index, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const now = new Date().toISOString();
+    const tx = db.transaction(() => {
+      bankQuestions.forEach((bq, idx) => {
+        insertStmt.run(
+          examId,
+          bq.question_text,
+          bq.question_type || 'Single Choice',
+          bq.option_a || '',
+          bq.option_b || '',
+          bq.option_c || '',
+          bq.option_d || '',
+          bq.correct_answer || 'A',
+          bq.marks || 1,
+          bq.explanation || '',
+          idx + 1,
+          now
+        );
+        imported++;
+      });
+    });
+    tx();
+  }
+
+  updateCollegeExam(examId, {});
+  return imported;
+}
+
+export function saveQuestionToBank(question: {
+  question_text: string;
+  question_type?: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+  marks?: number;
+  difficulty?: string;
+  topic?: string;
+  explanation?: string;
+}) {
+  const now = new Date().toISOString();
+  const stmt = db.prepare(`
+    INSERT INTO question_bank (
+      question_text, question_type, option_a, option_b, option_c, option_d,
+      correct_answer, marks, difficulty, topic, explanation, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const res = stmt.run(
+    question.question_text.trim(),
+    question.question_type || 'Single Choice',
+    question.option_a.trim(),
+    question.option_b.trim(),
+    question.option_c.trim(),
+    question.option_d.trim(),
+    question.correct_answer.toUpperCase().trim(),
+    question.marks || 1,
+    question.difficulty || 'Medium',
+    question.topic || 'SAP ABAP Fundamentals',
+    question.explanation?.trim() || '',
+    now,
+    now
+  );
+  return res.lastInsertRowid;
 }
 
 // ----------------------------------------------------

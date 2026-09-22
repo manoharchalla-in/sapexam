@@ -5,6 +5,8 @@ import {
   createCollegeExam,
   updateCollegeExam,
   deleteCollegeExam,
+  populateCollegeExamFromTemplate,
+  importBankQuestionsToCollegeExam,
 } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -69,10 +71,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       status: body.status || 'Draft',
     });
 
+    let questionsAdded = 0;
+    if (body.templateId) {
+      questionsAdded = populateCollegeExamFromTemplate(exam.id, parseInt(body.templateId, 10));
+    } else if (Array.isArray(body.questionBankIds) && body.questionBankIds.length > 0) {
+      questionsAdded = importBankQuestionsToCollegeExam(exam.id, body.questionBankIds);
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Exam created successfully with Exam Paper & Results folders',
+      message: questionsAdded > 0 
+        ? `Exam created successfully with ${questionsAdded} questions pre-populated!` 
+        : 'Exam created successfully with Exam Paper & Results folders',
       exam,
+      questionsAdded,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error?.message || 'Error creating exam' }, { status: 500 });

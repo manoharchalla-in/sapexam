@@ -30,6 +30,7 @@ import {
   UserCheck,
   Star,
   Sparkles,
+  FolderTree,
 } from 'lucide-react';
 
 interface Stats {
@@ -219,11 +220,11 @@ export default function AdminDashboardPage() {
 
           <div className="flex items-center space-x-3">
             <Link
-              href="/admin/records"
+              href="/admin/folders"
               className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-xs"
             >
-              <Filter className="w-3.5 h-3.5" />
-              <span>Filter All Assessment Records</span>
+              <FolderTree className="w-3.5 h-3.5" />
+              <span>Institutional Folders</span>
             </Link>
 
             <Link
@@ -423,20 +424,20 @@ export default function AdminDashboardPage() {
           {/* Quick Navigation Gateways Hub */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
-              href="/admin/records"
+              href="/admin/folders"
               className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:border-blue-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div>
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs border border-blue-100">
-                  <Filter className="w-5 h-5" />
+                  <FolderTree className="w-5 h-5" />
                 </div>
-                <h3 className="text-sm font-black text-slate-900 mb-1">Filter All Assessment Records</h3>
+                <h3 className="text-sm font-black text-slate-900 mb-1">Institutional Folders</h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Search, multi-dimensional filtering by trainer, campus, score, date, and export tools.
+                  Organized college workspaces with Student Credentials, Question Papers, and Results folders.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
-                <span>Open Filter Hub</span>
+                <span>Open Folders</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </Link>
