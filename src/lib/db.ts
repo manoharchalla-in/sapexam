@@ -2355,5 +2355,79 @@ if (initialCollegeCount === 0) {
   });
 }
 
+export function slugifyText(text: string): string {
+  return (text || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export function getCollegeBySlug(slugOrId: string | number): CollegeRecord | undefined {
+  if (typeof slugOrId === 'number' || (!isNaN(Number(slugOrId)) && String(slugOrId).trim() !== '')) {
+    const byId = getCollegeById(Number(slugOrId));
+    if (byId) return byId;
+  }
+
+  const str = String(slugOrId).trim().toLowerCase();
+  
+  // Try matching folder_id
+  const byFolder = getCollegeByFolderId(str);
+  if (byFolder) return byFolder;
+
+  // Try matching code or name
+  const all = getAllColleges();
+  const found = all.find((c) => {
+    const slug = slugifyText(c.name);
+    const code = (c.code || '').toLowerCase();
+    const folder = (c.folder_id || '').toLowerCase();
+    return slug === str || code === str || folder === str || c.name.toLowerCase() === str;
+  });
+
+  return found;
+}
+
+export function getExamByCollegeAndExamSlug(
+  collegeSlugOrId: string | number,
+  examSlugOrId: string | number
+): (CollegeExamRecord & { college: CollegeRecord }) | undefined {
+  const college = getCollegeBySlug(collegeSlugOrId);
+  if (!college) return undefined;
+
+  const exams = getExamsByCollegeId(college.id);
+  const examStr = String(examSlugOrId).trim().toLowerCase();
+
+  let foundExam: CollegeExamRecord | undefined;
+
+  if (!isNaN(Number(examSlugOrId))) {
+    foundExam = exams.find((e) => e.id === Number(examSlugOrId));
+  }
+
+  if (!foundExam) {
+    foundExam = exams.find((e) => {
+      const slug = slugifyText(e.name);
+      const code = (e.code || '').toLowerCase();
+      const token = (e.public_token || '').toLowerCase();
+      return slug === examStr || code === examStr || token === examStr || e.name.toLowerCase() === examStr;
+    });
+  }
+
+  if (!foundExam) {
+    // Also try direct token match in entire DB
+    const byToken = getExamByToken(examStr);
+    if (byToken && byToken.college_id === college.id) {
+      foundExam = byToken;
+    }
+  }
+
+  if (!foundExam) return undefined;
+
+  return {
+    ...foundExam,
+    college,
+  };
+}
+
 export default db;
+
 

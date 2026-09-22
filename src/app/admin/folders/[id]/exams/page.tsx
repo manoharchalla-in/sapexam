@@ -171,10 +171,20 @@ export default function ExamsAndResultsFolderPage() {
     }
   };
 
-  const copyExamLink = (token: string) => {
-    const link = `${window.location.origin}/exam/${token}`;
+  const copyExamLink = (examItem: CollegeExam) => {
+    const colSlug = (college?.name || 'college')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const exSlug = (examItem.name || 'exam')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const link = `${window.location.origin}/exam/${colSlug}/${exSlug}`;
     navigator.clipboard.writeText(link);
-    setCopiedToken(token);
+    setCopiedToken(examItem.public_token);
     setTimeout(() => setCopiedToken(null), 2500);
   };
 
@@ -377,7 +387,7 @@ export default function ExamsAndResultsFolderPage() {
 
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                     <button
-                      onClick={() => copyExamLink(exam.public_token)}
+                      onClick={() => copyExamLink(exam)}
                       className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-2xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200/80"
                     >
                       {copiedToken === exam.public_token ? (

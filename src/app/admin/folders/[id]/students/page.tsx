@@ -11,6 +11,7 @@ import {
   Filter,
   Download,
   ArrowLeft,
+  ArrowRight,
   Edit2,
   Trash2,
   Eye,
@@ -274,6 +275,24 @@ export default function StudentCredentialDataPage() {
 
           <div className="flex items-center space-x-2.5">
             <button
+              onClick={() => {
+                const slug = (college?.name || 'college')
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-+|-+$/g, '');
+                const regUrl = `${window.location.origin}/register/${slug}`;
+                navigator.clipboard.writeText(regUrl);
+                alert(`Student Registration Link copied to clipboard:\n${regUrl}`);
+              }}
+              className="glossy-button-secondary text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 shadow-2xs"
+              title="Copy Public Self-Registration Link for Students"
+            >
+              <UserPlus className="w-4 h-4 text-emerald-600" />
+              <span>Copy Registration Link</span>
+            </button>
+
+            <button
               onClick={exportCSV}
               disabled={students.length === 0}
               className="glossy-button-secondary text-slate-700 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 disabled:opacity-50"
@@ -293,6 +312,39 @@ export default function StudentCredentialDataPage() {
         </header>
 
         <div className="p-6 max-w-7xl w-full mx-auto space-y-5">
+          {/* Public Self-Registration Share Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/60 to-emerald-50 border border-emerald-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-emerald-950">
+                  Public Candidate Self-Registration Link
+                </h3>
+                <p className="text-[11px] text-emerald-800 font-medium">
+                  Share this link with students of <strong>{college?.name}</strong> so they can register their credentials directly.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                const slug = (college?.name || 'college')
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-+|-+$/g, '');
+                const regUrl = `${window.location.origin}/register/${slug}`;
+                navigator.clipboard.writeText(regUrl);
+                alert(`Student Registration Link copied to clipboard:\n${regUrl}`);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all shadow-xs flex items-center space-x-1.5 shrink-0"
+            >
+              <span>Copy Public Link</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
           {/* Search and Filters Bar */}
           <div className="glossy-panel p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-80">

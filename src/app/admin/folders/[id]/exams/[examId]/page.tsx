@@ -258,9 +258,24 @@ export default function ExamManageDetailPage() {
     }
   };
 
+  const getExamPathUrl = () => {
+    if (!exam) return '';
+    const colSlug = (exam.college_name || 'college')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const exSlug = (exam.name || 'exam')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return `${window.location.origin}/exam/${colSlug}/${exSlug}`;
+  };
+
   const copyPublicExamLink = () => {
     if (!exam) return;
-    const link = `${window.location.origin}/exam/${exam.public_token}`;
+    const link = getExamPathUrl();
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -353,7 +368,7 @@ export default function ExamManageDetailPage() {
             </button>
 
             <Link
-              href={`/exam/${exam?.public_token}`}
+              href={getExamPathUrl()}
               target="_blank"
               className="glossy-button-primary text-white text-xs font-black px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm"
             >
