@@ -75,8 +75,8 @@ interface QuestionItem {
 export default function CollegeExamTakerPage() {
   const params = useParams();
   const router = useRouter();
-  const collegeSlug = params.college as string;
-  const examSlug = params.exam as string;
+  const collegeSlug = params.slug as string;
+  const examSlug = params.examSlug as string;
 
   // Stages: 'loading' | 'auth' | 'instructions' | 'taking' | 'submitted' | 'error'
   const [stage, setStage] = useState<'loading' | 'auth' | 'instructions' | 'taking' | 'submitted' | 'error'>('loading');
@@ -218,36 +218,28 @@ export default function CollegeExamTakerPage() {
         setQuestions(data.questions);
         setTimeLeftSeconds((data.durationMinutes || 30) * 60);
         setCurrentIndex(0);
+        setAnswers({});
+        setBookmarked({});
         setStage('taking');
       } else {
         alert(data.message || 'Failed to start exam');
       }
     } catch (err) {
       console.error(err);
+      alert('Error initializing exam session');
     } finally {
       setVerifying(false);
     }
   };
 
-  // Select Answer
-  const selectOption = (optKey: string) => {
-    const currentQ = questions[currentIndex];
-    if (!currentQ) return;
+  // Select Option
+  const handleSelectOption = (optionKey: string) => {
+    const q = questions[currentIndex];
+    if (!q) return;
     setAnswers((prev) => ({
       ...prev,
-      [String(currentQ.id)]: optKey,
+      [q.id.toString()]: optionKey,
     }));
-  };
-
-  // Clear Selection
-  const clearSelection = () => {
-    const currentQ = questions[currentIndex];
-    if (!currentQ) return;
-    setAnswers((prev) => {
-      const next = { ...prev };
-      delete next[String(currentQ.id)];
-      return next;
-    });
   };
 
   // Toggle Bookmark
@@ -477,47 +469,56 @@ export default function CollegeExamTakerPage() {
             {/* Candidate Verification Card */}
             <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 flex items-center justify-between">
               <div className="space-y-0.5">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">Candidate Authenticated</span>
-                <h3 className="text-sm font-black text-emerald-950">{student?.name}</h3>
-                <p className="text-xs font-mono text-emerald-700">Roll: {student?.roll_number} • {student?.branch} ({student?.year})</p>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                  Institutional Candidate Verified
+                </span>
+                <h3 className="text-base font-black text-emerald-950">{student?.name}</h3>
+                <p className="text-xs font-mono font-bold text-emerald-700">
+                  Roll: {student?.roll_number} • {student?.branch} ({student?.year || '4th Year'})
+                </p>
+                <p className="text-2xs text-emerald-600 font-medium">Institution: {student?.college_name}</p>
               </div>
-              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-            </div>
-
-            {/* Exam Parameters */}
-            <div className="grid grid-cols-3 gap-3 text-center text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
-                <span className="text-2xs font-extrabold uppercase text-slate-400">Duration</span>
-                <p className="text-base font-black text-slate-800 mt-0.5">{exam?.duration_minutes} Mins</p>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
-                <span className="text-2xs font-extrabold uppercase text-slate-400">Total Marks</span>
-                <p className="text-base font-black text-slate-800 mt-0.5">{exam?.total_marks}</p>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/60">
-                <span className="text-2xs font-extrabold uppercase text-slate-400">Passing Marks</span>
-                <p className="text-base font-black text-emerald-700 mt-0.5">{exam?.passing_marks}</p>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md">
+                <CheckCircle2 className="w-6 h-6" />
               </div>
             </div>
 
-            {/* Instructions */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Assessment Instructions</h4>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs text-slate-600 leading-relaxed space-y-1 font-medium">
-                <p>1. Please do not refresh the page or switch browser tabs once the assessment starts.</p>
-                <p>2. The timer will automatically submit your test once time reaches 00:00.</p>
-                <p>3. You can review and change your selected answers anytime before final submission.</p>
-                <p>4. {exam?.instructions}</p>
+            {/* Assessment Rules */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">Assessment Parameters</h4>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <Clock className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                  <span className="text-2xs text-slate-400 block font-bold">Duration</span>
+                  <strong className="text-xs text-slate-900 font-black">{exam?.duration_minutes} Mins</strong>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <HelpCircle className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
+                  <span className="text-2xs text-slate-400 block font-bold">Questions</span>
+                  <strong className="text-xs text-slate-900 font-black">{exam?.total_questions} MCQs</strong>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <Award className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+                  <span className="text-2xs text-slate-400 block font-bold">Pass Marks</span>
+                  <strong className="text-xs text-slate-900 font-black">{exam?.passing_marks} / {exam?.total_marks}</strong>
+                </div>
               </div>
             </div>
+
+            {exam?.instructions && (
+              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 text-xs text-amber-900 space-y-1">
+                <strong className="block font-black text-amber-950">Instructions:</strong>
+                <p className="whitespace-pre-line text-slate-700 leading-relaxed">{exam.instructions}</p>
+              </div>
+            )}
 
             <button
               onClick={handleStartExam}
               disabled={verifying}
-              className="w-full glossy-button-primary text-white font-black py-3.5 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center space-x-2 shadow-md disabled:opacity-50"
+              className="w-full glossy-button-primary text-white font-black py-4 rounded-2xl text-sm uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transition-all"
             >
-              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              <span>{verifying ? 'Preparing Assessment...' : 'I Agree & Start Assessment'}</span>
+              {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileCheck2 className="w-5 h-5" />}
+              <span>{verifying ? 'Preparing Assessment Session...' : 'I Am Ready — Start Exam'}</span>
             </button>
           </div>
         </div>
@@ -526,40 +527,41 @@ export default function CollegeExamTakerPage() {
   }
 
   // =========================================================
-  // STAGE: EXAM IN PROGRESS
+  // STAGE: TAKING EXAM
   // =========================================================
   if (stage === 'taking') {
-    const currentQuestion = questions[currentIndex];
-    const currentAns = answers[String(currentQuestion?.id)];
-    const isMarked = bookmarked[currentIndex];
+    const currentQ = questions[currentIndex];
+    const currentAns = currentQ ? answers[currentQ.id.toString()] : undefined;
+    const answeredCount = Object.keys(answers).length;
 
     return (
-      <main className="min-h-screen bg-slate-100 flex flex-col justify-between font-sans">
-        {/* Top Header with Live Timer */}
-        <header className="glossy-header px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+      <main className="min-h-screen bg-slate-100/70 flex flex-col font-sans">
+        {/* Top Sticky Status Bar */}
+        <header className="glossy-header px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-xs border-b border-slate-200">
           <div className="flex items-center space-x-3">
             <AppLogo size="sm" />
             <div>
-              <h1 className="text-xs font-black text-slate-900">{exam?.name}</h1>
-              <p className="text-[10px] text-slate-500 font-mono">Candidate: {student?.name} ({student?.roll_number})</p>
+              <h2 className="text-xs font-black text-slate-900 leading-tight">{exam?.name}</h2>
+              <p className="text-[10px] text-slate-400 font-bold">{student?.name} • {student?.roll_number}</p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
+            {/* Live Countdown Timer */}
             <div
-              className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs font-black font-mono border ${
+              className={`px-3.5 py-1.5 rounded-xl border flex items-center space-x-2 font-mono font-black text-xs transition-colors shadow-2xs ${
                 timeLeftSeconds < 180
-                  ? 'bg-rose-50 text-rose-600 border-rose-200 animate-pulse'
-                  : 'bg-blue-50 text-blue-700 border-blue-200'
+                  ? 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse'
+                  : 'bg-slate-900 text-white border-slate-900'
               }`}
             >
-              <Clock className="w-4 h-4" />
+              <Clock className="w-3.5 h-3.5" />
               <span>{formatTimer(timeLeftSeconds)}</span>
             </div>
 
             <button
               onClick={() => setIsSubmitModalOpen(true)}
-              className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all shadow-xs flex items-center space-x-1"
+              className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all shadow-xs flex items-center space-x-1.5"
             >
               <Send className="w-3.5 h-3.5" />
               <span>Submit Test</span>
@@ -567,149 +569,179 @@ export default function CollegeExamTakerPage() {
           </div>
         </header>
 
-        <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Question Panel (3 cols) */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="glossy-card rounded-3xl p-6 sm:p-8 space-y-6 border border-slate-200/90 shadow-sm">
-              {/* Question Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <span className="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                  Question {currentIndex + 1} of {questions.length}
-                </span>
+            {currentQ && (
+              <div className="glossy-card rounded-3xl p-6 sm:p-8 space-y-6 border border-slate-200/90 shadow-sm flex flex-col justify-between min-h-[460px]">
+                <div>
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center space-x-2">
+                      <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-50 text-blue-700 border border-blue-100">
+                        Question {currentIndex + 1} of {questions.length}
+                      </span>
+                      <span className="text-2xs font-bold text-slate-400">
+                        ({currentQ.marks} {currentQ.marks === 1 ? 'Mark' : 'Marks'})
+                      </span>
+                    </div>
 
-                <button
-                  onClick={toggleBookmark}
-                  className={`text-xs font-bold flex items-center space-x-1.5 px-3 py-1 rounded-xl transition-colors ${
-                    isMarked ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  <Bookmark className="w-3.5 h-3.5" />
-                  <span>{isMarked ? 'Marked for Review' : 'Mark for Review'}</span>
-                </button>
-              </div>
+                    <button
+                      onClick={toggleBookmark}
+                      className={`p-2 rounded-xl text-xs font-bold flex items-center space-x-1 transition-colors ${
+                        bookmarked[currentIndex]
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      }`}
+                    >
+                      <Bookmark className={`w-3.5 h-3.5 ${bookmarked[currentIndex] ? 'fill-amber-600' : ''}`} />
+                      <span>{bookmarked[currentIndex] ? 'Bookmarked' : 'Review Later'}</span>
+                    </button>
+                  </div>
 
-              {/* Question Text */}
-              <div className="text-sm sm:text-base font-bold text-slate-900 leading-relaxed">
-                {currentQuestion?.question_text}
-              </div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 mt-4 leading-snug">
+                    {currentQ.question_text}
+                  </h3>
+                </div>
 
-              {/* Options Radio List */}
-              <div className="space-y-3 pt-2">
-                {[
-                  { key: 'A', text: currentQuestion?.option_a },
-                  { key: 'B', text: currentQuestion?.option_b },
-                  { key: 'C', text: currentQuestion?.option_c },
-                  { key: 'D', text: currentQuestion?.option_d },
-                ].map((opt) => (
-                  <label
-                    key={opt.key}
-                    onClick={() => selectOption(opt.key)}
-                    className={`flex items-center p-3.5 rounded-2xl border cursor-pointer select-none transition-all duration-150 ${
-                      currentAns === opt.key
-                        ? 'bg-blue-50 border-blue-600 text-blue-950 font-bold shadow-xs ring-1 ring-blue-500/20'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={`q_${currentQuestion?.id}`}
-                      checked={currentAns === opt.key}
-                      onChange={() => selectOption(opt.key)}
-                      className="w-4 h-4 text-blue-600 mr-3"
-                    />
-                    <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center mr-3 shrink-0">
-                      {opt.key}
-                    </span>
-                    <span className="text-xs sm:text-sm font-medium">{opt.text}</span>
-                  </label>
-                ))}
-              </div>
+                {/* Multiple Choice Options */}
+                <div className="space-y-3">
+                  {[
+                    { key: 'A', text: currentQ.option_a },
+                    { key: 'B', text: currentQ.option_b },
+                    { key: 'C', text: currentQ.option_c },
+                    { key: 'D', text: currentQ.option_d },
+                  ].map((opt) => {
+                    const isSelected = currentAns === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        onClick={() => handleSelectOption(opt.key)}
+                        className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center space-x-3.5 ${
+                          isSelected
+                            ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold shadow-xs ring-2 ring-blue-500/20'
+                            : 'bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800'
+                        }`}
+                      >
+                        <div
+                          className={`w-7 h-7 rounded-xl flex items-center justify-center font-mono text-xs font-black shrink-0 transition-colors ${
+                            isSelected ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {opt.key}
+                        </div>
+                        <span className="text-xs sm:text-sm font-medium flex-1">{opt.text}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Bottom Nav Buttons */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <button
-                  onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-                  disabled={currentIndex === 0}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 disabled:opacity-40 flex items-center space-x-1"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Previous</span>
-                </button>
-
-                {currentAns && (
+                {/* Navigation Buttons */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                   <button
-                    onClick={clearSelection}
-                    className="text-2xs font-bold text-slate-400 hover:text-rose-600 transition-colors"
+                    onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+                    disabled={currentIndex === 0}
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black flex items-center space-x-1.5 disabled:opacity-40 transition-colors"
                   >
-                    Clear Selection
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous</span>
                   </button>
-                )}
 
-                <button
-                  onClick={() => setCurrentIndex((prev) => Math.min(questions.length - 1, prev + 1))}
-                  disabled={currentIndex === questions.length - 1}
-                  className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-black hover:bg-blue-700 disabled:opacity-40 flex items-center space-x-1"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                  <div className="flex items-center space-x-2">
+                    {currentAns && (
+                      <button
+                        onClick={() => {
+                          const copy = { ...answers };
+                          delete copy[currentQ.id.toString()];
+                          setAnswers(copy);
+                        }}
+                        className="text-2xs font-bold text-rose-500 hover:underline px-2"
+                      >
+                        Clear Response
+                      </button>
+                    )}
+
+                    {currentIndex === questions.length - 1 ? (
+                      <button
+                        onClick={() => setIsSubmitModalOpen(true)}
+                        className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center space-x-1.5 shadow-md"
+                      >
+                        <span>Review & Submit</span>
+                        <CheckCircle2 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setCurrentIndex((prev) => Math.min(questions.length - 1, prev + 1))}
+                        className="glossy-button-primary text-white text-xs font-black px-5 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm"
+                      >
+                        <span>Next Question</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Question Palette Sidebar (1 col) */}
+          {/* Right Question Palette Sidebar (1 col) */}
           <div className="space-y-4">
-            <div className="glossy-card rounded-3xl p-5 border border-slate-200/90 space-y-4 shadow-sm">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Question Palette</h3>
+            <div className="glossy-card rounded-3xl p-5 border border-slate-200/90 shadow-sm space-y-4">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-700">Question Palette</h4>
 
-              {/* Legend */}
-              <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-600">
+              {/* Status Legend */}
+              <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-500 pb-3 border-b border-slate-100">
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span>Answered ({Object.keys(answers).length})</span>
+                  <span className="w-3 h-3 rounded-md bg-blue-600 shrink-0" />
+                  <span>Answered ({answeredCount})</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-full bg-slate-200" />
-                  <span>Unanswered ({questions.length - Object.keys(answers).length})</span>
+                  <span className="w-3 h-3 rounded-md bg-slate-100 border border-slate-300 shrink-0" />
+                  <span>Unanswered ({questions.length - answeredCount})</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-full bg-amber-400" />
-                  <span>Marked for Review</span>
+                  <span className="w-3 h-3 rounded-md bg-amber-400 shrink-0" />
+                  <span>Bookmarked ({Object.values(bookmarked).filter(Boolean).length})</span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-3 h-3 rounded-md ring-2 ring-blue-500 shrink-0" />
+                  <span>Current Item</span>
                 </div>
               </div>
 
-              {/* Question Buttons Grid */}
-              <div className="grid grid-cols-5 gap-2 pt-2">
+              {/* Grid Palette */}
+              <div className="grid grid-cols-5 gap-2 max-h-64 overflow-y-auto pr-1">
                 {questions.map((q, idx) => {
-                  const isAns = !!answers[String(q.id)];
-                  const isRev = !!bookmarked[idx];
-                  const isCurrent = idx === currentIndex;
+                  const isAns = !!answers[q.id.toString()];
+                  const isCurrent = currentIndex === idx;
+                  const isMarked = !!bookmarked[idx];
 
-                  let btnBg = 'bg-slate-100 text-slate-700 border-slate-200';
-                  if (isRev) btnBg = 'bg-amber-400 text-amber-950 font-black border-amber-500';
-                  else if (isAns) btnBg = 'bg-emerald-500 text-white font-black border-emerald-600';
-
-                  if (isCurrent) btnBg += ' ring-2 ring-blue-600 ring-offset-1';
+                  let style = 'bg-slate-100 text-slate-700 border-slate-200';
+                  if (isAns) style = 'bg-blue-600 text-white border-blue-700 font-black shadow-2xs';
+                  if (isMarked) style = 'bg-amber-400 text-amber-950 border-amber-500 font-black';
 
                   return (
                     <button
                       key={q.id}
                       onClick={() => setCurrentIndex(idx)}
-                      className={`h-9 rounded-xl text-xs font-bold flex items-center justify-center border transition-all ${btnBg}`}
+                      className={`h-9 rounded-xl text-xs font-bold transition-all flex items-center justify-center border relative ${style} ${
+                        isCurrent ? 'ring-2 ring-blue-500 ring-offset-2 scale-105 z-10' : ''
+                      }`}
                     >
                       {idx + 1}
+                      {isMarked && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full" />
+                      )}
                     </button>
                   );
                 })}
               </div>
 
-              <div className="pt-3 border-t border-slate-100">
+              <div className="pt-2 border-t border-slate-100">
                 <button
                   onClick={() => setIsSubmitModalOpen(true)}
-                  className="w-full glossy-button-primary text-white text-xs font-black py-2.5 rounded-xl flex items-center justify-center space-x-2"
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-all shadow-xs"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Submit Exam</span>
+                  Finish Assessment
                 </button>
               </div>
             </div>
@@ -719,31 +751,37 @@ export default function CollegeExamTakerPage() {
         {/* SUBMISSION CONFIRMATION MODAL */}
         {isSubmitModalOpen && (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="w-full max-w-md glossy-card rounded-3xl p-6 space-y-4 shadow-2xl text-center">
+            <div className="w-full max-w-md glossy-card rounded-3xl p-6 space-y-4 shadow-2xl text-center animate-in fade-in zoom-in-95">
               <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto border border-emerald-100">
-                <HelpCircle className="w-7 h-7" />
+                <FileCheck2 className="w-7 h-7" />
               </div>
+
               <div>
-                <h3 className="text-base font-black text-slate-950">Confirm Assessment Submission?</h3>
+                <h3 className="text-base font-black text-slate-950">Confirm Final Submission?</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  You have answered <strong>{Object.keys(answers).length}</strong> of <strong>{questions.length}</strong> questions.
-                  Are you ready to submit your assessment?
+                  You have answered <strong>{answeredCount}</strong> out of <strong>{questions.length}</strong> questions.
                 </p>
               </div>
+
+              {questions.length - answeredCount > 0 && (
+                <div className="p-3 rounded-xl bg-amber-50 text-amber-800 text-2xs font-bold border border-amber-200 text-left">
+                  ⚠️ You still have {questions.length - answeredCount} unanswered questions. Unanswered questions receive 0 marks.
+                </div>
+              )}
 
               <div className="pt-2 flex items-center justify-center space-x-3">
                 <button
                   onClick={() => setIsSubmitModalOpen(false)}
                   className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-200"
                 >
-                  Continue Test
+                  Return to Test
                 </button>
                 <button
                   onClick={handleFinalSubmit}
                   disabled={submitting}
                   className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-md disabled:opacity-50"
                 >
-                  {submitting ? 'Submitting...' : 'Yes, Submit Test'}
+                  {submitting ? 'Evaluating...' : 'Yes, Submit Assessment'}
                 </button>
               </div>
             </div>
@@ -754,74 +792,95 @@ export default function CollegeExamTakerPage() {
   }
 
   // =========================================================
-  // STAGE: SUBMITTED & SCORECARD
+  // STAGE: SUBMITTED / SCORECARD
   // =========================================================
   if (stage === 'submitted' && result) {
-    const isPassed = result.result_status === 'PASS';
+    const isPass = result.result_status === 'PASS';
 
     return (
-      <main className="min-h-screen bg-gradient-to-b from-slate-50 via-slate-100/60 to-slate-100 flex flex-col justify-between font-sans">
-        <header className="glossy-header px-6 py-3.5 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center space-x-3">
-            <AppLogo size="md" />
-            <div>
-              <h1 className="text-sm font-black text-slate-900">{exam?.college_name}</h1>
-              <p className="text-[10px] text-slate-500 font-bold">{exam?.name}</p>
-            </div>
-          </div>
+      <main className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans">
+        <header className="glossy-header px-6 py-3.5 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+          <AppLogo size="md" />
+          <span className="text-xs font-bold text-slate-500">{exam?.college_name}</span>
         </header>
 
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg glossy-card rounded-3xl p-8 space-y-6 shadow-2xl border border-slate-200/90 text-center">
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
+          <div className="w-full max-w-lg glossy-card rounded-3xl p-8 space-y-6 shadow-xl border border-slate-200/90 text-center animate-in fade-in zoom-in-95">
             <div
-              className={`w-16 h-16 rounded-3xl flex items-center justify-center mx-auto shadow-md ${
-                isPassed ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+              className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto shadow-md ${
+                isPass ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
               }`}
             >
-              {isPassed ? <Award className="w-9 h-9" /> : <AlertTriangle className="w-9 h-9" />}
+              {isPass ? <Award className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
             </div>
 
             <div>
               <span
-                className={`px-3 py-1 rounded-full text-2xs font-black uppercase tracking-wider border ${
-                  isPassed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+                className={`px-3 py-1 rounded-full text-2xs font-black uppercase tracking-wider ${
+                  isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                 }`}
               >
-                Assessment Result: {result.result_status}
+                Assessment Completed • {result.result_status}
               </span>
               <h2 className="text-2xl font-black text-slate-900 mt-2">
-                {isPassed ? 'Congratulations! You Passed' : 'Assessment Completed'}
+                {isPass ? 'Congratulations!' : 'Assessment Finished'}
               </h2>
-              <p className="text-xs text-slate-500 font-medium">Candidate: {student?.name} ({student?.roll_number})</p>
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                Candidate: <strong>{student?.name}</strong> ({student?.roll_number})
+              </p>
             </div>
 
-            {/* Scorecard Grid */}
+            {/* Scorecard Results Matrix */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
-                <span className="text-2xs font-extrabold uppercase text-slate-400">Score</span>
-                <p className="text-xl font-black text-slate-900 mt-0.5">{result.obtained_marks} / {result.total_marks}</p>
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-2xs text-slate-400 font-bold block">Score</span>
+                <strong className="text-base text-slate-900 font-black">
+                  {result.obtained_marks} / {result.total_marks}
+                </strong>
               </div>
 
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
-                <span className="text-2xs font-extrabold uppercase text-slate-400">Percentage</span>
-                <p className="text-xl font-black text-blue-600 mt-0.5">{result.percentage}%</p>
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-2xs text-slate-400 font-bold block">Percentage</span>
+                <strong className="text-base text-blue-600 font-black">{result.percentage}%</strong>
               </div>
 
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
-                <span className="text-2xs font-extrabold uppercase text-slate-400">Correct</span>
-                <p className="text-xl font-black text-emerald-600 mt-0.5">{result.correct_answers} / {result.total_questions}</p>
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <span className="text-2xs text-slate-400 font-bold block">Status</span>
+                <strong
+                  className={`text-base font-black ${isPass ? 'text-emerald-600' : 'text-rose-600'}`}
+                >
+                  {result.result_status}
+                </strong>
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-xs text-slate-600 space-y-1">
-              <p>Your assessment submission has been recorded securely under <strong>{exam?.college_name}</strong>.</p>
-              <p className="text-2xs text-slate-400">Timestamp: {new Date().toLocaleString()}</p>
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 text-xs text-slate-600 space-y-1.5 text-left">
+              <div className="flex justify-between">
+                <span>Correct Answers:</span>
+                <strong className="text-emerald-600">{result.correct_answers}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Incorrect Answers:</span>
+                <strong className="text-rose-600">{result.incorrect_answers}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Time Taken:</span>
+                <strong>{Math.round((result.time_taken_seconds || 0) / 60)} minutes</strong>
+              </div>
+              <div className="flex justify-between border-t border-slate-200/60 pt-1.5">
+                <span>Institution:</span>
+                <strong className="text-slate-900">{exam?.college_name}</strong>
+              </div>
             </div>
+
+            <p className="text-[11px] text-slate-400">
+              Your scorecard has been securely recorded into the institution's results ledger. You may now close this window.
+            </p>
           </div>
         </div>
 
         <footer className="py-3 text-center text-[10px] text-slate-400">
-          Powered by SAP Exam Control • Institutional Assessment System
+          © {new Date().getFullYear()} {exam?.college_name} • SAP Exam Control
         </footer>
       </main>
     );

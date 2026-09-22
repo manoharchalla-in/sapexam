@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getExamByToken,
+  getExamByCollegeAndExamSlug,
   getQuestionsByExamId,
   getStudentByRollOrEmail,
   getStudentAttemptForExam,
@@ -12,33 +12,37 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: Promise<{ slug: string; examSlug: string }> }
 ) {
   try {
-    const { token } = await params;
-    const exam = getExamByToken(token);
-    if (!exam) {
-      return NextResponse.json({ success: false, message: 'Invalid or expired Exam Link' }, { status: 404 });
+    const { slug: collegeSlug, examSlug } = await params;
+    const examWithCollege = getExamByCollegeAndExamSlug(collegeSlug, examSlug);
+
+    if (!examWithCollege) {
+      return NextResponse.json(
+        { success: false, message: 'Assessment not found for the specified college and exam path' },
+        { status: 404 }
+      );
     }
 
-    // Return safe public metadata
     return NextResponse.json({
       success: true,
       exam: {
-        id: exam.id,
-        name: exam.name,
-        code: exam.code,
-        subject: exam.subject,
-        description: exam.description,
-        college_id: exam.college_id,
-        college_name: exam.college_name,
-        duration_minutes: exam.duration_minutes,
-        total_questions: exam.total_questions,
-        total_marks: exam.total_marks,
-        passing_marks: exam.passing_marks,
-        instructions: exam.instructions,
-        status: exam.status,
-        public_token: exam.public_token,
+        id: examWithCollege.id,
+        name: examWithCollege.name,
+        code: examWithCollege.code,
+        subject: examWithCollege.subject,
+        description: examWithCollege.description,
+        college_id: examWithCollege.college.id,
+        college_name: examWithCollege.college.name,
+        college_code: examWithCollege.college.code,
+        duration_minutes: examWithCollege.duration_minutes,
+        total_questions: examWithCollege.total_questions,
+        total_marks: examWithCollege.total_marks,
+        passing_marks: examWithCollege.passing_marks,
+        instructions: examWithCollege.instructions,
+        status: examWithCollege.status,
+        public_token: examWithCollege.public_token,
       },
     });
   } catch (error: any) {
@@ -48,19 +52,23 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: Promise<{ slug: string; examSlug: string }> }
 ) {
   try {
-    const { token } = await params;
-    const exam = getExamByToken(token);
-    if (!exam) {
-      return NextResponse.json({ success: false, message: 'Invalid or expired Exam Link' }, { status: 404 });
+    const { slug: collegeSlug, examSlug } = await params;
+    const examWithCollege = getExamByCollegeAndExamSlug(collegeSlug, examSlug);
+
+    if (!examWithCollege) {
+      return NextResponse.json(
+        { success: false, message: 'Assessment not found for this institution path' },
+        { status: 404 }
+      );
     }
 
-    if (exam.status !== 'Published') {
+    if (examWithCollege.status !== 'Published') {
       return NextResponse.json({
         success: false,
-        message: 'This assessment is currently not open or is in ' + exam.status + ' mode.',
+        message: `This assessment is currently in ${examWithCollege.status} mode and is not active for submissions.`,
       }, { status: 403 });
     }
 
@@ -89,30 +97,31 @@ export async function POST(
       }
 
       // Check student in database belonging to THIS college ONLY
-      const student = getStudentByRollOrEmail(exam.college_id, username);
+      const student = getStudentByRollOrEmail(examWithCollege.college_id, username);
       if (!student) {
         return NextResponse.json({
           success: false,
-          message: `Candidate record not found for ${exam.college_name}. Please verify your Username/Roll Number or register your credentials.`,
+          notRegistered: true,
+          message: `Candidate record not found for ${examWithCollege.college_name}. Please register your student credentials first using the college registration link.`,
         }, { status: 404 });
       }
 
-      // Validate password
+      // Validate Password
       const validPassword = student.password_hash || '123456';
       if (password !== validPassword) {
         return NextResponse.json({
           success: false,
-          message: 'Invalid Password. Please check the credentials assigned to your student account.',
+          message: 'Invalid Password. Please enter the correct password assigned to your student credentials.',
         }, { status: 401 });
       }
 
       // Check existing attempt
-      const previousAttempt = getStudentAttemptForExam(exam.id, student.id);
+      const previousAttempt = getStudentAttemptForExam(examWithCollege.id, student.id);
       if (previousAttempt && previousAttempt.status === 'Submitted') {
         return NextResponse.json({
           success: false,
           alreadySubmitted: true,
-          message: 'You have already submitted this assessment. Multiple attempts are not permitted.',
+          message: 'You have already completed this assessment. Multiple attempts are not permitted.',
           result: {
             score: previousAttempt.obtained_marks,
             totalMarks: previousAttempt.total_marks,
@@ -152,13 +161,13 @@ export async function POST(
 
       // Start attempt record
       const attempt = recordExamAttemptStart({
-        exam_id: exam.id,
+        exam_id: examWithCollege.id,
         student_id: studentId,
-        college_id: exam.college_id,
+        college_id: examWithCollege.college_id,
       });
 
       // Fetch questions and sanitize (strip out correct_answer and explanation)
-      const rawQuestions = getQuestionsByExamId(exam.id);
+      const rawQuestions = getQuestionsByExamId(examWithCollege.id);
       const safeQuestions = rawQuestions.map((q) => ({
         id: q.id,
         question_text: q.question_text,
@@ -175,7 +184,7 @@ export async function POST(
         success: true,
         attemptId: attempt.id,
         startedAt: attempt.started_at,
-        durationMinutes: exam.duration_minutes,
+        durationMinutes: examWithCollege.duration_minutes,
         questions: safeQuestions,
       });
     }
