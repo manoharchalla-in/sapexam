@@ -26,6 +26,9 @@ import {
   GraduationCap,
   Calendar,
   Lock,
+  KeyRound,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 interface College {
@@ -216,7 +219,7 @@ export default function StudentCredentialDataPage() {
 
   const exportCSV = () => {
     if (students.length === 0) return;
-    const headers = ['Student Name', 'Roll Number', 'Registration No', 'Email', 'Mobile', 'Department', 'Branch', 'Year', 'Section', 'Gender', 'DOB', 'Username', 'Registered Date'];
+    const headers = ['Student Name', 'Roll Number', 'Registration No', 'Email', 'Mobile', 'Department', 'Branch', 'Year', 'Section', 'Gender', 'DOB', 'Username', 'Exam Password', 'Registered Date'];
     const rows = students.map((s) => [
       `"${s.name.replace(/"/g, '""')}"`,
       `"${s.roll_number}"`,
@@ -229,7 +232,8 @@ export default function StudentCredentialDataPage() {
       `"${s.section || ''}"`,
       `"${s.gender || ''}"`,
       `"${s.dob || ''}"`,
-      `"${s.username || ''}"`,
+      `"${s.username || s.roll_number}"`,
+      `"${s.password_hash || '123456'}"`,
       `"${new Date(s.created_at).toLocaleDateString()}"`,
     ]);
 
@@ -424,6 +428,7 @@ export default function StudentCredentialDataPage() {
                       <th className="py-3 px-4">Email & Mobile</th>
                       <th className="py-3 px-4">Dept / Branch</th>
                       <th className="py-3 px-4">Year & Sec</th>
+                      <th className="py-3 px-4">Username & Password</th>
                       <th className="py-3 px-4 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -432,7 +437,9 @@ export default function StudentCredentialDataPage() {
                       <tr key={student.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-3.5 px-5">
                           <div className="font-black text-slate-900">{student.name}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">ID: {student.username || student.roll_number}</div>
+                          {student.registration_number && (
+                            <div className="text-[10px] text-slate-400 font-mono">Reg: {student.registration_number}</div>
+                          )}
                         </td>
 
                         <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
@@ -458,6 +465,23 @@ export default function StudentCredentialDataPage() {
                           {student.section && (
                             <div className="text-[10px] text-slate-400 font-bold">Sec: {student.section}</div>
                           )}
+                        </td>
+
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-1.5 font-mono text-2xs font-bold text-slate-800">
+                              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">User:</span>
+                              <span className="bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded border border-slate-200">
+                                {student.username || student.roll_number}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-1.5 font-mono text-2xs font-bold text-emerald-800">
+                              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Pass:</span>
+                              <span className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">
+                                {student.password_hash || '123456'}
+                              </span>
+                            </div>
+                          </div>
                         </td>
 
                         <td className="py-3.5 px-4 text-center">
@@ -679,6 +703,32 @@ export default function StudentCredentialDataPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium glossy-input text-slate-900"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                    Exam Username (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={regData.username}
+                    onChange={(e) => setRegData({ ...regData, username: e.target.value })}
+                    placeholder="Defaults to Roll Number"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold glossy-input text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                    Exam Password (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={regData.password}
+                    onChange={(e) => setRegData({ ...regData, password: e.target.value })}
+                    placeholder="Defaults to 123456"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold glossy-input text-slate-900"
+                  />
+                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2">
@@ -719,6 +769,38 @@ export default function StudentCredentialDataPage() {
               </div>
               <button onClick={() => setViewStudent(null)} className="p-1 text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Exam Credentials Highlight Box */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-2xs font-extrabold uppercase tracking-wider text-emerald-800 flex items-center space-x-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Exam Login Credentials</span>
+                </div>
+                <div className="flex items-center space-x-4 text-xs">
+                  <div>
+                    <span className="text-2xs text-slate-500">Username: </span>
+                    <strong className="font-mono text-slate-900">{viewStudent.username || viewStudent.roll_number}</strong>
+                  </div>
+                  <div>
+                    <span className="text-2xs text-slate-500">Password: </span>
+                    <strong className="font-mono text-emerald-800">{viewStudent.password_hash || '123456'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  const creds = `Username: ${viewStudent.username || viewStudent.roll_number}\nPassword: ${viewStudent.password_hash || '123456'}`;
+                  navigator.clipboard.writeText(creds);
+                  alert(`Exam credentials copied:\n${creds}`);
+                }}
+                className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-2xs transition-colors"
+                title="Copy Exam Credentials"
+              >
+                <Copy className="w-4 h-4" />
               </button>
             </div>
 
@@ -818,6 +900,27 @@ export default function StudentCredentialDataPage() {
                     onChange={(e) => setEditStudent({ ...editStudent, email: e.target.value })}
                     className="w-full px-3.5 py-2 rounded-xl text-xs font-bold glossy-input text-slate-900"
                     required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-2xs font-extrabold uppercase text-slate-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    value={editStudent.username || ''}
+                    onChange={(e) => setEditStudent({ ...editStudent, username: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl text-xs font-mono font-bold glossy-input text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-2xs font-extrabold uppercase text-slate-700 mb-1">Exam Password</label>
+                  <input
+                    type="text"
+                    value={editStudent.password_hash || ''}
+                    onChange={(e) => setEditStudent({ ...editStudent, password_hash: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl text-xs font-mono font-bold glossy-input text-slate-900"
                   />
                 </div>
               </div>

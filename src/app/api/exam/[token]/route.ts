@@ -71,33 +71,39 @@ export async function POST(
     // ACTION 1: VERIFY STUDENT CREDENTIALS
     // ----------------------------------------------------
     if (action === 'verify_student') {
-      const identifier = (body.identifier || body.rollNumber || body.email || '').trim();
+      const username = (body.username || body.identifier || body.rollNumber || body.email || '').trim();
       const password = (body.password || '').trim();
 
-      if (!identifier) {
+      if (!username) {
         return NextResponse.json({
           success: false,
-          message: 'Please enter your Roll Number or Registration Email.',
+          message: 'Please enter your Username or Roll Number.',
+        }, { status: 400 });
+      }
+
+      if (!password) {
+        return NextResponse.json({
+          success: false,
+          message: 'Please enter your Exam Login Password.',
         }, { status: 400 });
       }
 
       // Check student in database belonging to THIS college ONLY
-      const student = getStudentByRollOrEmail(exam.college_id, identifier);
+      const student = getStudentByRollOrEmail(exam.college_id, username);
       if (!student) {
         return NextResponse.json({
           success: false,
-          message: `Candidate record not found for ${exam.college_name}. Please verify your Roll Number/Email or register with your college admin.`,
+          message: `Candidate record not found for ${exam.college_name}. Please verify your Username/Roll Number or register your credentials.`,
         }, { status: 404 });
       }
 
-      // If password protection is configured and provided
-      if (student.password_hash && student.password_hash !== '123' && student.password_hash !== '123456') {
-        if (password && student.password_hash !== password) {
-          return NextResponse.json({
-            success: false,
-            message: 'Invalid password. Please check your credentials.',
-          }, { status: 401 });
-        }
+      // Validate password
+      const validPassword = student.password_hash || '123456';
+      if (password !== validPassword) {
+        return NextResponse.json({
+          success: false,
+          message: 'Invalid Password. Please check the credentials assigned to your student account.',
+        }, { status: 401 });
       }
 
       // Check existing attempt

@@ -68,7 +68,7 @@ export async function POST(
       gender: body.gender?.trim() || 'Male',
       dob: body.dob?.trim() || '',
       username: body.username?.trim() || body.roll_number.trim(),
-      password: body.password?.trim() || '123',
+      password: body.password?.trim() || '123456',
     });
 
     return NextResponse.json({
@@ -79,6 +79,8 @@ export async function POST(
         name: student.name,
         roll_number: student.roll_number,
         email: student.email,
+        username: student.username || student.roll_number,
+        password: student.password_hash || '123456',
         college_name: college.name,
       },
     });

@@ -50,6 +50,7 @@ export default function PublicStudentRegistrationPage() {
     section: 'A',
     gender: 'Male',
     dob: '',
+    username: '',
     password: '',
   });
 
@@ -141,12 +142,12 @@ export default function PublicStudentRegistrationPage() {
           <AppLogo size="md" />
           <div>
             <h1 className="text-sm font-black text-slate-900">{college?.name}</h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase">Candidate Registration Portal</p>
+            <p className="text-[10px] text-slate-500 font-bold">Candidate Self-Registration</p>
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center space-x-1.5 text-2xs font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="flex items-center space-x-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+          <ShieldCheck className="w-4 h-4 text-emerald-600" />
           <span>Self-Registration Open</span>
         </div>
       </header>
@@ -174,6 +175,39 @@ export default function PublicStudentRegistrationPage() {
                 </p>
               </div>
 
+              {/* Highlight Exam Credentials Box */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white max-w-md mx-auto text-left shadow-lg space-y-3">
+                <div className="flex items-center justify-between border-b border-white/20 pb-2">
+                  <div className="flex items-center space-x-2 font-black text-xs uppercase tracking-wider">
+                    <Lock className="w-4 h-4 text-emerald-200" />
+                    <span>Your Exam Login Credentials</span>
+                  </div>
+                  <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">Use for Exams</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-2.5 rounded-xl bg-black/15">
+                    <span className="text-[10px] text-emerald-100 uppercase font-bold block">Username / ID</span>
+                    <strong className="font-mono text-sm font-black text-white">{registeredStudent.username || registeredStudent.roll_number}</strong>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-black/15">
+                    <span className="text-[10px] text-emerald-100 uppercase font-bold block">Password</span>
+                    <strong className="font-mono text-sm font-black text-white">{registeredStudent.password || formData.password || '123456'}</strong>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const creds = `Institution: ${college?.name}\nUsername: ${registeredStudent.username || registeredStudent.roll_number}\nPassword: ${registeredStudent.password || formData.password || '123456'}`;
+                    navigator.clipboard.writeText(creds);
+                    alert(`Exam credentials copied to clipboard:\n\n${creds}`);
+                  }}
+                  className="w-full py-2 bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-black rounded-xl transition-colors shadow-xs"
+                >
+                  Copy Login Credentials
+                </button>
+              </div>
+
               {/* Registration Summary Card */}
               <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 max-w-md mx-auto text-left text-xs space-y-2.5">
                 <div className="flex justify-between border-b border-slate-200/60 pb-2">
@@ -195,7 +229,7 @@ export default function PublicStudentRegistrationPage() {
               </div>
 
               <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto">
-                You can now use your Roll Number (<strong>{registeredStudent.roll_number}</strong>) to access any assessments or exams shared by your college.
+                You can now use your <strong>Username</strong> and <strong>Password</strong> shown above to access exams assigned to <strong>{college?.name}</strong>.
               </p>
             </div>
           ) : (
@@ -389,6 +423,40 @@ export default function PublicStudentRegistrationPage() {
                       onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-900 glossy-input"
                     />
+                  </div>
+
+                  {/* Exam Username */}
+                  <div>
+                    <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                      Exam Username <span className="text-slate-400 font-normal">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        placeholder="Defaults to Roll Number"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-mono font-bold text-slate-900 glossy-input"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Exam Password */}
+                  <div>
+                    <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                      Exam Login Password <span className="text-emerald-600 font-black">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        placeholder="Enter password for exam login (e.g. 123456)"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-mono font-bold text-slate-900 glossy-input"
+                      />
+                    </div>
                   </div>
                 </div>
 
