@@ -22,7 +22,6 @@ import {
   Send,
   Loader2,
   Sparkles,
-  UserPlus,
   Lock,
   Eye,
   EyeOff,
@@ -362,18 +361,6 @@ export default function CollegeExamTakerPage() {
                       <AlertTriangle className="w-4 h-4 shrink-0" />
                       <span>{authError}</span>
                     </div>
-
-                    {notRegistered && (
-                      <div className="pt-2 border-t border-rose-200/70">
-                        <Link
-                          href={`/register/${collegeSlug}`}
-                          className="inline-flex items-center space-x-1.5 text-xs font-black text-white bg-rose-600 hover:bg-rose-700 px-3 py-1.5 rounded-lg shadow-xs"
-                        >
-                          <UserPlus className="w-3.5 h-3.5" />
-                          <span>Register Your Credentials Now →</span>
-                        </Link>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -430,13 +417,6 @@ export default function CollegeExamTakerPage() {
                   <span>{verifying ? 'Authenticating...' : 'Sign In & Take Exam'}</span>
                 </button>
               </form>
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 text-center text-2xs text-slate-500 font-medium">
-                Not registered in <strong>{exam?.college_name}</strong>?{' '}
-                <Link href={`/register/${collegeSlug}`} className="text-blue-600 font-bold underline">
-                  Self-Register Here
-                </Link>
-              </div>
             </div>
           </div>
         </div>
