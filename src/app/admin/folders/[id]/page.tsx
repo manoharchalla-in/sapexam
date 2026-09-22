@@ -118,7 +118,7 @@ export default function CollegeFolderDetailPage() {
             </div>
 
             <div className="text-2xs font-bold text-slate-400">
-              2 subfolders automatically created
+              3 subfolders (Students, Exam Papers, Results)
             </div>
           </div>
 
@@ -142,13 +142,22 @@ export default function CollegeFolderDetailPage() {
                 onClick={() => router.push(`/admin/folders/${college.id}/students`)}
               />
 
-              {/* Folder 2: Exams & Results */}
+              {/* Folder 2: Exam Papers */}
               <ExplorerFolder
-                name="Exams & Results"
-                subLabel="Assessments & Scorecards"
-                badge={`${college.exam_count || 0} Assessments`}
+                name="Exam Papers"
+                subLabel="Question Papers & Tests"
+                badge={`${college.exam_count || 0} Papers`}
                 innerIcon={<FileCheck2 className="w-4 h-4 text-indigo-600" />}
                 onClick={() => router.push(`/admin/folders/${college.id}/exams`)}
+              />
+
+              {/* Folder 3: Results */}
+              <ExplorerFolder
+                name="Results"
+                subLabel="Assessment Ledger"
+                badge="Scorecards"
+                innerIcon={<Award className="w-4 h-4 text-amber-500" />}
+                onClick={() => router.push(`/admin/folders/${college.id}/results`)}
               />
             </div>
           </div>

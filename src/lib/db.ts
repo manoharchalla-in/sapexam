@@ -2124,6 +2124,62 @@ export function getAttemptsByExamId(
   return stmt.all(...params) as CollegeExamAttemptRecord[];
 }
 
+export function getResultsByCollegeId(
+  collegeId: number,
+  options?: {
+    search?: string;
+    examId?: number | 'all';
+    status?: string;
+    sortBy?: 'date' | 'score' | 'name' | 'exam';
+    sortOrder?: 'asc' | 'desc';
+  }
+): CollegeExamAttemptRecord[] {
+  let query = `
+    SELECT cea.*,
+      ce.name as exam_name,
+      ce.code as exam_code,
+      cs.name as student_name,
+      cs.roll_number,
+      cs.registration_number,
+      cs.email,
+      cs.mobile,
+      cs.department,
+      cs.branch,
+      cs.year,
+      cs.section,
+      c.name as college_name
+    FROM college_exam_attempts cea
+    JOIN college_exams ce ON ce.id = cea.exam_id
+    JOIN college_students cs ON cs.id = cea.student_id
+    JOIN colleges c ON c.id = cea.college_id
+    WHERE cea.college_id = ? AND cea.status = 'Submitted'
+  `;
+  const params: any[] = [collegeId];
+
+  if (options?.search && options.search.trim() !== '') {
+    const term = `%${options.search.trim().toLowerCase()}%`;
+    query += ` AND (LOWER(cs.name) LIKE ? OR LOWER(cs.roll_number) LIKE ? OR LOWER(cs.email) LIKE ? OR LOWER(ce.name) LIKE ?)`;
+    params.push(term, term, term, term);
+  }
+
+  if (options?.examId && options.examId !== 'all') {
+    query += ` AND cea.exam_id = ?`;
+    params.push(options.examId);
+  }
+
+  if (options?.status && options.status !== 'all') {
+    query += ` AND UPPER(cea.result_status) = ?`;
+    params.push(options.status.toUpperCase());
+  }
+
+  const sortCol = options?.sortBy === 'score' ? 'cea.obtained_marks' : options?.sortBy === 'name' ? 'cs.name' : options?.sortBy === 'exam' ? 'ce.name' : 'cea.submitted_at';
+  const sortDir = options?.sortOrder === 'asc' ? 'ASC' : 'DESC';
+  query += ` ORDER BY ${sortCol} ${sortDir}`;
+
+  const stmt = db.prepare(query);
+  return stmt.all(...params) as CollegeExamAttemptRecord[];
+}
+
 export function getAttemptById(attemptId: string): CollegeExamAttemptRecord | undefined {
   const stmt = db.prepare(`
     SELECT cea.*,

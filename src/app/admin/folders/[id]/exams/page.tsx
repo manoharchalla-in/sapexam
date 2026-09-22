@@ -208,11 +208,11 @@ export default function ExamsAndResultsFolderPage() {
                 <span>/</span>
                 <Link href={`/admin/folders/${collegeId}`} className="hover:text-blue-600">{college?.name || 'College'}</Link>
                 <span>/</span>
-                <span className="text-amber-600 font-extrabold">Exams & Results</span>
+                <span className="text-indigo-600 font-extrabold">Exam Papers</span>
               </div>
               <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
-                <FileCheck2 className="w-5 h-5 text-amber-500" />
-                <span>Exams & Results</span>
+                <FileCheck2 className="w-5 h-5 text-indigo-600" />
+                <span>Exam Papers</span>
               </h1>
             </div>
           </div>
@@ -223,12 +223,34 @@ export default function ExamsAndResultsFolderPage() {
               className="glossy-button-primary text-white text-xs font-black px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>+ New Exam</span>
+              <span>+ Create Exam Paper</span>
             </button>
           </div>
         </header>
 
         <div className="p-6 max-w-7xl w-full mx-auto space-y-6">
+          {/* Quick Subfolder Switcher Bar */}
+          <div className="glossy-panel p-2 rounded-2xl flex items-center space-x-2">
+            <Link
+              href={`/admin/folders/${collegeId}/students`}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors flex items-center space-x-2"
+            >
+              <span>📁</span>
+              <span>Student Credential Data</span>
+            </Link>
+            <div className="px-3.5 py-2 rounded-xl text-xs font-black text-indigo-900 bg-indigo-100/70 border border-indigo-200 shadow-2xs flex items-center space-x-2">
+              <span>📁</span>
+              <span>Exam Papers</span>
+            </div>
+            <Link
+              href={`/admin/folders/${collegeId}/results`}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-amber-700 hover:bg-amber-50 transition-colors flex items-center space-x-2"
+            >
+              <span>📁</span>
+              <span>Results Folder</span>
+            </Link>
+          </div>
+
           {/* Windows Explorer Style Address & View Bar */}
           <div className="glossy-panel p-3 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="flex items-center space-x-2 bg-white/90 px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs">
@@ -237,7 +259,7 @@ export default function ExamsAndResultsFolderPage() {
               <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
               <Link href={`/admin/folders/${collegeId}`} className="text-xs font-bold text-slate-600 hover:text-blue-600">{college?.name}</Link>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-xs font-black text-slate-900">Exams & Results</span>
+              <span className="text-xs font-black text-slate-900">Exam Papers</span>
             </div>
 
             <div className="flex items-center space-x-3">

@@ -316,6 +316,28 @@ export default function StudentCredentialDataPage() {
         </header>
 
         <div className="p-6 max-w-7xl w-full mx-auto space-y-5">
+          {/* Quick Subfolder Switcher Bar */}
+          <div className="glossy-panel p-2 rounded-2xl flex items-center space-x-2">
+            <div className="px-3.5 py-2 rounded-xl text-xs font-black text-emerald-900 bg-emerald-100/70 border border-emerald-200 shadow-2xs flex items-center space-x-2">
+              <span>📁</span>
+              <span>Student Credential Data</span>
+            </div>
+            <Link
+              href={`/admin/folders/${collegeId}/exams`}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 transition-colors flex items-center space-x-2"
+            >
+              <span>📁</span>
+              <span>Exam Papers</span>
+            </Link>
+            <Link
+              href={`/admin/folders/${collegeId}/results`}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-amber-700 hover:bg-amber-50 transition-colors flex items-center space-x-2"
+            >
+              <span>📁</span>
+              <span>Results Folder</span>
+            </Link>
+          </div>
+
           {/* Public Self-Registration Share Banner */}
           <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/60 to-emerald-50 border border-emerald-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center space-x-3">

@@ -338,7 +338,9 @@ export default function ExamManageDetailPage() {
               <div className="flex items-center space-x-2 text-2xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                 <Link href="/admin/folders" className="hover:text-blue-600">Folders</Link>
                 <span>/</span>
-                <Link href={`/admin/folders/${collegeId}/exams`} className="hover:text-blue-600">{exam?.college_name || 'College'}</Link>
+                <Link href={`/admin/folders/${collegeId}`} className="hover:text-blue-600">{exam?.college_name || 'College'}</Link>
+                <span>/</span>
+                <Link href={`/admin/folders/${collegeId}/exams`} className="hover:text-blue-600">Exam Papers</Link>
                 <span>/</span>
                 <span className="text-indigo-600 font-extrabold">{exam?.name}</span>
               </div>
@@ -391,31 +393,31 @@ export default function ExamManageDetailPage() {
                 }`}
               >
                 <BarChart3 className="w-4 h-4" />
-                <span>📈 Exam Dashboard</span>
+                <span>Dashboard</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('paper')}
                 className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center space-x-2 ${
                   activeTab === 'paper'
-                    ? 'bg-white text-blue-600 shadow-xs'
+                    ? 'bg-white text-indigo-700 shadow-xs border border-indigo-100'
                     : 'text-slate-600 hover:text-slate-950'
                 }`}
               >
-                <FileCode className="w-4 h-4" />
-                <span>📁 Exam Paper ({questions.length})</span>
+                <span className="text-amber-500">📁</span>
+                <span>Exam Paper ({questions.length})</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('results')}
                 className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center space-x-2 ${
                   activeTab === 'results'
-                    ? 'bg-white text-emerald-600 shadow-xs'
+                    ? 'bg-white text-amber-700 shadow-xs border border-amber-100'
                     : 'text-slate-600 hover:text-slate-950'
                 }`}
               >
-                <Award className="w-4 h-4" />
-                <span>📁 Results ({results.length})</span>
+                <span className="text-amber-500">📁</span>
+                <span>Results Folder ({results.length})</span>
               </button>
             </div>
 
