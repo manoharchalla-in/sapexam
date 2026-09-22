@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  Activity,
-  BarChart3,
   UserCheck,
   LogOut,
   Menu,
@@ -37,8 +35,6 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
     { label: 'Dashboard & Overview', href: '/admin', icon: LayoutDashboard },
     { label: 'Folders', href: '/admin/folders', icon: FolderTree },
     { label: 'Trainer Panels & Credentials', href: '/admin/trainers', icon: UserCheck },
-    { label: 'Live Monitoring', href: '/admin/live', icon: Activity },
-    { label: 'Analytics & Pass Rates', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Landing Page & Settings', href: '/admin/settings', icon: Settings },
   ];
 

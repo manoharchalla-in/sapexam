@@ -383,29 +383,55 @@ export default function ExamsAndQuestionPapersFolderPage() {
                       </div>
 
                       <div className="space-y-2 pt-1">
-                        <div className="p-3 bg-white/80 rounded-xl border border-slate-200/90 flex items-center justify-between">
-                          <div className="flex items-center space-x-2.5 text-xs font-bold text-slate-800">
-                            <span className="text-base">📁</span>
-                            <span>Exam Paper ({exam.question_count || 0} Questions)</span>
+                        <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200/90 flex items-center justify-between">
+                          <div className="flex items-center space-x-2 text-xs font-bold text-slate-800">
+                            <span>📁</span>
+                            <span>Question Paper ({exam.question_count || 0} Questions)</span>
                           </div>
                           <Link
-                            href={`/admin/folders/${collegeId}/exams/${exam.id}`}
-                            className="text-2xs font-black text-blue-600 hover:text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg transition-colors"
+                            href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=questions`}
+                            className="text-2xs font-black text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg transition-colors"
                           >
-                            Manage Questions →
+                            Open Builder →
                           </Link>
                         </div>
 
-                        <div className="p-3 bg-white/80 rounded-xl border border-slate-200/90 flex items-center justify-between">
-                          <div className="flex items-center space-x-2.5 text-xs font-bold text-slate-800">
-                            <span className="text-base">📁</span>
-                            <span>Results ({exam.attempt_count || 0} Submissions)</span>
+                        <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200/90 flex items-center justify-between">
+                          <div className="flex items-center space-x-2 text-xs font-bold text-slate-800">
+                            <span className="text-emerald-600">🔴</span>
+                            <span>Live Monitoring</span>
                           </div>
                           <Link
-                            href={`/admin/folders/${collegeId}/results?examId=${exam.id}`}
+                            href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=live`}
                             className="text-2xs font-black text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg transition-colors"
                           >
-                            Open Results Folder →
+                            Live Proctor →
+                          </Link>
+                        </div>
+
+                        <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200/90 flex items-center justify-between">
+                          <div className="flex items-center space-x-2 text-xs font-bold text-slate-800">
+                            <span className="text-purple-600">📊</span>
+                            <span>Analytics & Pass Rates</span>
+                          </div>
+                          <Link
+                            href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=analytics`}
+                            className="text-2xs font-black text-purple-700 hover:text-purple-800 bg-purple-50 px-2.5 py-1 rounded-lg transition-colors"
+                          >
+                            View Analytics →
+                          </Link>
+                        </div>
+
+                        <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200/90 flex items-center justify-between">
+                          <div className="flex items-center space-x-2 text-xs font-bold text-slate-800">
+                            <span className="text-amber-500">📁</span>
+                            <span>Results Folder ({exam.attempt_count || 0} Submissions)</span>
+                          </div>
+                          <Link
+                            href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=results`}
+                            className="text-2xs font-black text-amber-800 hover:text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg transition-colors"
+                          >
+                            Open Results →
                           </Link>
                         </div>
                       </div>
