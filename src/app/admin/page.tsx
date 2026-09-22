@@ -4,696 +4,385 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import ExplorerFolder from '@/components/common/ExplorerFolder';
 import {
+  FolderTree,
+  Building2,
   Users,
+  FileCheck2,
   Award,
-  TrendingUp,
-  CheckCircle,
-  XCircle,
   Search,
-  Download,
-  Trash2,
-  Eye,
+  PlusCircle,
+  ArrowRight,
   LogOut,
   ChevronRight,
   Loader2,
-  Building,
-  Check,
-  FileCode,
-  ArrowRight,
-  Settings,
-  Filter,
-  Layers,
-  Database,
-  Activity,
-  BarChart3,
-  UserCheck,
-  Star,
   Sparkles,
-  FolderTree,
+  ShieldCheck,
+  Check,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 
-interface Stats {
-  totalAttempts: number;
-  averageScore: number;
-  averagePercentage: number;
-  highestScore: number;
-  passedCount: number;
-  belowFiveCount: number;
-  trainerStats?: Record<string, { total: number; avgScore: number; passed: number }>;
-  campusStats?: Record<string, { total: number; avgScore: number; passed: number }>;
-}
-
-interface AssessmentRecordItem {
-  id: string;
-  candidate_name: string;
-  candidate_email: string;
-  campus_name?: string;
-  trainer_name?: string;
-  question_paper_title?: string;
-  attempt_number: number;
-  score: number;
-  total_questions: number;
-  percentage: number;
-  correct_answers: number;
-  incorrect_answers: number;
-  unanswered_answers: number;
-  submitted_at: string;
-}
-
-interface TrainerItem {
+interface College {
   id: number;
-  username: string;
-  display_name: string;
-}
-
-interface CampusItem {
-  id: number;
+  folder_id: string;
   name: string;
+  code: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  student_count?: number;
+  exam_count?: number;
 }
 
 export default function AdminDashboardPage() {
   const router = useRouter();
 
-  const [records, setRecords] = useState<AssessmentRecordItem[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [trainersList, setTrainersList] = useState<TrainerItem[]>([]);
-  const [campusesList, setCampusesList] = useState<CampusItem[]>([]);
-  const [total, setTotal] = useState<number>(0);
+  const [colleges, setColleges] = useState<College[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [authError, setAuthError] = useState<boolean>(false);
+  // New College Modal
+  const [isNewCollegeOpen, setIsNewCollegeOpen] = useState(false);
+  const [collegeName, setCollegeName] = useState('');
+  const [collegeCode, setCollegeCode] = useState('');
+  const [collegeDescription, setCollegeDescription] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
-  const [portalSettings, setPortalSettings] = useState({
-    portal_title: 'SAP Learning Portal',
-    portal_subtitle: 'Enterprise Skill Assessment System',
-    portal_assessment_name: 'SAP ABAP Assessment',
-    portal_instructions: 'Enter your details to begin the assessment.',
-  });
-  const [editAssessmentName, setEditAssessmentName] = useState('SAP ABAP Assessment');
-  const [editPortalTitle, setEditPortalTitle] = useState('SAP Learning Portal');
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [settingsSavedSuccess, setSettingsSavedSuccess] = useState(false);
-
-  const fetchPortalSettings = useCallback(async () => {
+  const fetchColleges = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/settings');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.settings) {
-          setPortalSettings(data.settings);
-          setEditAssessmentName(data.settings.portal_assessment_name || 'SAP ABAP Assessment');
-          setEditPortalTitle(data.settings.portal_title || 'SAP Learning Portal');
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch settings', err);
-    }
-  }, []);
+      setLoading(true);
+      const url = new URL('/api/admin/folders/colleges', window.location.origin);
+      if (search) url.searchParams.set('search', search);
 
-  const handleQuickSaveSettings = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!editAssessmentName.trim()) return;
-    setIsSavingSettings(true);
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          portal_assessment_name: editAssessmentName.trim(),
-          portal_title: editPortalTitle.trim() || 'SAP Learning Portal',
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.settings) {
-          setPortalSettings(data.settings);
-        }
-        setSettingsSavedSuccess(true);
-        setTimeout(() => setSettingsSavedSuccess(false), 3000);
-      }
-    } catch (err) {
-      console.error('Failed to save settings', err);
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
-  const fetchTrainers = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/trainers');
-      if (res.ok) {
-        const data = await res.json();
-        setTrainersList(data.trainers || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch trainers', err);
-    }
-  }, []);
-
-  const fetchCampuses = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/campuses');
-      if (res.ok) {
-        const data = await res.json();
-        setCampusesList(data.campuses || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch campuses', err);
-    }
-  }, []);
-
-  const fetchResults = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/results?limit=5&sortBy=date&sortOrder=desc');
-      if (res.status === 401) {
-        setAuthError(true);
-        router.push('/admin/login');
-        return;
-      }
-
-      if (!res.ok) throw new Error('Failed to fetch results');
-
+      const res = await fetch(url.toString());
       const data = await res.json();
-      setRecords(data.records || []);
-      setStats(data.stats || null);
-      setTotal(data.total || 0);
+      if (data.success) {
+        setColleges(data.colleges || []);
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [search]);
 
   useEffect(() => {
-    fetchResults();
-    fetchTrainers();
-    fetchCampuses();
-    fetchPortalSettings();
-  }, [fetchResults, fetchTrainers, fetchCampuses, fetchPortalSettings]);
+    fetchColleges();
+  }, [fetchColleges]);
+
+  const handleCreateCollege = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!collegeName.trim()) {
+      setCreateError('Institution / College Name is required');
+      return;
+    }
+    setCreateError('');
+    setCreating(true);
+
+    try {
+      const res = await fetch('/api/admin/folders/colleges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: collegeName.trim(),
+          code: collegeCode.trim() || undefined,
+          description: collegeDescription.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.college) {
+        setIsNewCollegeOpen(false);
+        setCollegeName('');
+        setCollegeCode('');
+        setCollegeDescription('');
+        fetchColleges();
+        router.push(`/admin/folders/${data.college.id}`);
+      } else {
+        setCreateError(data.message || 'Failed to create college folder');
+      }
+    } catch (err: any) {
+      setCreateError(err?.message || 'Error creating college folder');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const handleLogout = async () => {
     await fetch('/api/admin/auth', { method: 'DELETE' });
     router.push('/admin/login');
   };
 
-  if (authError) return null;
+  const totalStudents = colleges.reduce((acc, c) => acc + (c.student_count || 0), 0);
+  const totalExams = colleges.reduce((acc, c) => acc + (c.exam_count || 0), 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      <AdminSidebar />
-      <div className="lg:pl-64 flex flex-col min-h-screen min-w-0">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex">
+      <AdminSidebar currentRole="Main Super Admin" />
+
+      <main className="flex-1 lg:pl-64 flex flex-col min-h-screen min-w-0">
         {/* Top Header */}
-        <header className="bg-white border-b border-slate-200 py-4 px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+        <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 py-4 px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
           <div className="flex items-center space-x-3">
             <div>
-              <h1 className="text-base font-black text-slate-950 leading-tight flex items-center space-x-2">
-                <span>Executive Dashboard</span>
-                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
-                  {portalSettings.portal_assessment_name || 'SAP ABAP Assessment'}
+              <div className="flex items-center space-x-2">
+                <h1 className="text-base font-black text-slate-950 leading-tight">
+                  Institutional Folders Dashboard
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold flex items-center space-x-1">
+                  <ShieldCheck className="w-3 h-3 text-blue-600" />
+                  <span>Enterprise Workspaces</span>
                 </span>
-              </h1>
-              <p className="text-xs text-slate-500 font-medium">{portalSettings.portal_subtitle || 'Central Candidate Assessment & Results Management'}</p>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                Centralized College Workspaces • Student Credential Data • Exam Papers (Q&P) • Results
+              </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
-            <Link
-              href="/admin/folders"
-              className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-xs"
+            <button
+              onClick={() => setIsNewCollegeOpen(true)}
+              className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-2.5 px-4 rounded-xl transition-all shadow-xs"
             >
-              <FolderTree className="w-3.5 h-3.5" />
-              <span>Institutional Folders</span>
-            </Link>
-
-            <Link
-              href="/admin/results"
-              className="inline-flex items-center space-x-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold py-2 px-3.5 rounded-xl transition-all"
-            >
-              <Award className="w-3.5 h-3.5" />
-              <span>Assessment Results</span>
-            </Link>
+              <PlusCircle className="w-4 h-4" />
+              <span>+ New College Folder</span>
+            </button>
 
             <button
               onClick={handleLogout}
               className="inline-flex items-center space-x-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold py-2 px-3.5 rounded-xl transition-all"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Logout</span>
+              <span>Sign Out</span>
             </button>
           </div>
         </header>
 
         <div className="w-full px-6 md:px-8 py-6 space-y-6 min-w-0">
-          {/* Executive Performance Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Link
-              href="/admin/records"
-              className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:border-blue-400 hover:shadow-md transition-all group relative overflow-hidden"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-2xs font-extrabold uppercase tracking-wider text-slate-500 group-hover:text-blue-600">
-                  Total Evaluated
+          {/* Institutional Stats Summary Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs bg-gradient-to-br from-white via-slate-50/50 to-blue-50/30 flex items-center justify-between">
+              <div>
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-slate-400 block">
+                  Institutional Folders
                 </span>
-                <div className="p-2 rounded-xl bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
-                  <Users className="w-4 h-4" />
+                <div className="text-3xl font-black text-slate-950 mt-1 tracking-tight">
+                  {colleges.length}
                 </div>
-              </div>
-              <div className="text-3xl font-black text-slate-950 mt-2 tracking-tight">{stats?.totalAttempts || 0}</div>
-              <span className="text-[11px] text-blue-600 font-bold group-hover:underline flex items-center space-x-0.5 mt-1">
-                <span>View All in Records Hub</span>
-                <ChevronRight className="w-3 h-3" />
-              </span>
-            </Link>
-
-            <Link
-              href="/admin/results"
-              className="glossy-card rounded-3xl p-5 border border-emerald-200/80 shadow-2xs bg-gradient-to-b from-white to-emerald-50/20 hover:border-emerald-400 hover:shadow-md transition-all group relative overflow-hidden"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-2xs font-extrabold uppercase tracking-wider text-emerald-800">
-                  Passed Candidates
+                <span className="text-[11px] text-blue-600 font-bold mt-0.5 inline-block">
+                  Active College Workspaces
                 </span>
-                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
-                  <CheckCircle className="w-4 h-4" />
-                </div>
               </div>
-              <div className="text-3xl font-black text-emerald-700 mt-2 tracking-tight">{stats?.passedCount || 0}</div>
-              <span className="text-[11px] text-emerald-600 font-bold mt-1 inline-block">
-                {stats?.totalAttempts ? Math.round((stats.passedCount / stats.totalAttempts) * 100) : 0}% Pass Rate
-              </span>
-            </Link>
-
-            <Link
-              href="/admin/results"
-              className="glossy-card rounded-3xl p-5 border border-rose-200/80 shadow-2xs bg-gradient-to-b from-white to-rose-50/20 hover:border-rose-400 hover:shadow-md transition-all group relative overflow-hidden"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-2xs font-extrabold uppercase tracking-wider text-rose-800">
-                  Below 5 (Failed)
-                </span>
-                <div className="p-2 rounded-xl bg-rose-50 text-rose-600 group-hover:scale-110 transition-transform">
-                  <XCircle className="w-4 h-4" />
-                </div>
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
+                <FolderTree className="w-6 h-6" />
               </div>
-              <div className="text-3xl font-black text-rose-700 mt-2 tracking-tight">{stats?.belowFiveCount || 0}</div>
-              <span className="text-[11px] text-rose-600 font-bold mt-1 inline-block">Needs Retake</span>
-            </Link>
-
-            <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-2xs font-extrabold uppercase tracking-wider text-slate-500">Average Score</span>
-                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="text-3xl font-black text-slate-900 mt-2 tracking-tight">{stats?.averageScore || 0} <span className="text-xs text-slate-400 font-normal">/ 10</span></div>
-              <span className="text-[11px] text-slate-500 mt-1 inline-block">{stats?.averagePercentage || 0}% overall score</span>
             </div>
 
-            <div className="glossy-card rounded-3xl p-5 border border-amber-200/80 shadow-2xs bg-gradient-to-b from-white to-amber-50/20 col-span-2 md:col-span-1">
-              <div className="flex items-center justify-between">
-                <span className="text-2xs font-extrabold uppercase tracking-wider text-amber-800">Highest Score</span>
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+            <div className="glossy-card rounded-3xl p-5 border border-emerald-200/80 shadow-2xs bg-gradient-to-br from-white via-slate-50/50 to-emerald-50/30 flex items-center justify-between">
+              <div>
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-emerald-800 block">
+                  Candidate Credentials
+                </span>
+                <div className="text-3xl font-black text-emerald-700 mt-1 tracking-tight">
+                  {totalStudents}
                 </div>
+                <span className="text-[11px] text-emerald-600 font-bold mt-0.5 inline-block">
+                  Enrolled Students
+                </span>
               </div>
-              <div className="text-3xl font-black text-amber-700 mt-2 tracking-tight">{stats?.highestScore || 0} <span className="text-xs text-amber-500 font-normal">/ 10</span></div>
-              <span className="text-[11px] text-amber-600 font-bold mt-1 inline-block">Peak Result</span>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-2xs">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="glossy-card rounded-3xl p-5 border border-indigo-200/80 shadow-2xs bg-gradient-to-br from-white via-slate-50/50 to-indigo-50/30 flex items-center justify-between">
+              <div>
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-indigo-800 block">
+                  Question Papers (Q&P)
+                </span>
+                <div className="text-3xl font-black text-indigo-700 mt-1 tracking-tight">
+                  {totalExams}
+                </div>
+                <span className="text-[11px] text-indigo-600 font-bold mt-0.5 inline-block">
+                  Authored Assessments
+                </span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
+                <FileCheck2 className="w-6 h-6" />
+              </div>
             </div>
           </div>
 
-          {/* Dynamic Assessment Configuration Banner */}
-          <div className="glossy-card rounded-3xl p-6 border border-slate-200/80 shadow-2xs">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-start space-x-3.5">
-                <div className="p-3 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0 shadow-2xs">
-                  <Settings className="w-5 h-5" />
+          {/* Windows Explorer Style Institutional Folders Hub */}
+          <div className="glossy-card rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 flex items-center space-x-2">
+                  <span>📁</span>
+                  <span>Institutional Workspaces Directory</span>
+                </h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Click any college folder to manage candidate credentials, question papers, and results.
+                </p>
+              </div>
+
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search college folder name..."
+                  className="w-full pl-10 pr-4 py-2 text-xs font-bold text-slate-800 glossy-input rounded-xl"
+                />
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="py-20 flex flex-col items-center justify-center space-y-3">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <p className="text-xs font-bold text-slate-500">Loading Institutional Folders...</p>
+              </div>
+            ) : colleges.length === 0 ? (
+              <div className="py-16 text-center space-y-4 max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100">
+                  <FolderTree className="w-8 h-8" />
                 </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h2 className="text-sm font-black text-slate-950 uppercase tracking-wider">
-                      Live Assessment Configuration
-                    </h2>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold">
-                      Active
-                    </span>
+                <h4 className="text-base font-black text-slate-900">No College Folders Found</h4>
+                <p className="text-xs text-slate-500 font-medium">
+                  Create your first institutional workspace to begin managing students and question papers.
+                </p>
+                <button
+                  onClick={() => setIsNewCollegeOpen(true)}
+                  className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl inline-flex items-center space-x-2"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>+ Create College Folder</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-items-center pt-2">
+                {colleges.map((col) => (
+                  <ExplorerFolder
+                    key={col.id}
+                    name={col.name}
+                    subLabel={col.folder_id}
+                    badge={`${col.student_count || 0} Students • ${col.exam_count || 0} Exams`}
+                    innerIcon={<Building2 className="w-4 h-4 text-amber-600" />}
+                    onClick={() => router.push(`/admin/folders/${col.id}`)}
+                  />
+                ))}
+
+                {/* Add New College Tile */}
+                <div
+                  onClick={() => setIsNewCollegeOpen(true)}
+                  className="group flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/40 transition-all cursor-pointer text-center w-32 h-36 space-y-2"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-colors">
+                    <PlusCircle className="w-5 h-5" />
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                    Dynamically customize the assessment title displayed across student exam portals and reports in real-time.
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-blue-700">
+                    + New Folder
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* CREATE COLLEGE FOLDER MODAL */}
+      {isNewCollegeOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md glossy-card rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <Building2 className="w-5 h-5" />
+                <div>
+                  <h3 className="text-base font-black">Create Institutional Folder</h3>
+                  <p className="text-[11px] text-blue-100 font-medium">
+                    Creates an isolated folder with Students, Exams, and Results
                   </p>
                 </div>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Link
-                  href="/admin/settings"
-                  className="inline-flex items-center space-x-1.5 glossy-card hover:bg-slate-50 text-slate-700 text-xs font-bold py-2 px-3.5 rounded-xl transition-all border border-slate-200/80 shadow-2xs"
-                >
-                  <span>Landing Page & Campus Settings</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-                <a
-                  href="/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center space-x-1.5 bg-blue-50/80 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-2xs"
-                >
-                  <span>Preview Candidate Portal</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
+              <button onClick={() => setIsNewCollegeOpen(false)} className="p-1 text-white/80 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleQuickSaveSettings} className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-              <div className="md:col-span-5 space-y-1">
-                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider">
-                  Assessment Name (Displayed to Candidates)
+            <form onSubmit={handleCreateCollege} className="p-6 space-y-4">
+              {createError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{createError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  College / Institution Name <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
-                  value={editAssessmentName}
-                  onChange={(e) => setEditAssessmentName(e.target.value)}
-                  placeholder="e.g. SAP ABAP Assessment"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
+                  value={collegeName}
+                  onChange={(e) => setCollegeName(e.target.value)}
+                  placeholder="e.g. Acharya Nagarjuna University"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold glossy-input text-slate-900"
+                  required
                 />
               </div>
 
-              <div className="md:col-span-4 space-y-1">
-                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider">
-                  Portal Header Title
+              <div>
+                <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  Institution Code / Short Name
                 </label>
                 <input
                   type="text"
-                  value={editPortalTitle}
-                  onChange={(e) => setEditPortalTitle(e.target.value)}
-                  placeholder="e.g. SAP Learning Portal"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 bg-slate-50/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
+                  value={collegeCode}
+                  onChange={(e) => setCollegeCode(e.target.value)}
+                  placeholder="e.g. ANU"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs font-bold font-mono uppercase glossy-input text-slate-900"
                 />
               </div>
 
-              <div className="md:col-span-3 flex items-center space-x-2">
+              <div>
+                <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  Description / Notes
+                </label>
+                <textarea
+                  value={collegeDescription}
+                  onChange={(e) => setCollegeDescription(e.target.value)}
+                  placeholder="Optional institutional notes or department details..."
+                  rows={2}
+                  className="w-full px-3.5 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewCollegeOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  disabled={isSavingSettings}
-                  className="w-full inline-flex items-center justify-center space-x-1.5 glossy-button-primary text-xs font-extrabold py-2.5 px-4 rounded-xl shadow-xs transition-all disabled:opacity-50"
+                  disabled={creating}
+                  className="glossy-button-primary text-white text-xs font-black px-5 py-2.5 rounded-xl flex items-center space-x-2 disabled:opacity-50"
                 >
-                  {isSavingSettings ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Save Assessment</span>
-                    </>
-                  )}
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  <span>{creating ? 'Creating...' : 'Create Folder'}</span>
                 </button>
-                {settingsSavedSuccess && (
-                  <span className="text-xs font-bold text-emerald-600 flex items-center space-x-1 shrink-0">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Saved!</span>
-                  </span>
-                )}
               </div>
             </form>
           </div>
-
-          {/* Quick Navigation Gateways Hub */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              href="/admin/folders"
-              className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:border-blue-400 hover:shadow-md transition-all group flex flex-col justify-between"
-            >
-              <div>
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs border border-blue-100">
-                  <FolderTree className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-black text-slate-900 mb-1">Institutional Folders</h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Organized college workspaces with Student Credentials, Question Papers, and Results folders.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
-                <span>Open Folders</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            <Link
-              href="/admin/results"
-              className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:border-amber-400 hover:shadow-md transition-all group flex flex-col justify-between"
-            >
-              <div>
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs border border-amber-100">
-                  <Award className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-black text-slate-900 mb-1">Assessment Results</h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Official scorecards, grade classifications, distinction lists, and candidate performance analysis.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-700">
-                <span>View Results Ledger</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            <Link
-              href="/admin/trainers"
-              className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:border-indigo-400 hover:shadow-md transition-all group flex flex-col justify-between"
-            >
-              <div>
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs border border-indigo-100">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-black text-slate-900 mb-1">Trainer Panels & Credentials</h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Manage trainer accounts, reset passwords, copy login links, and view individual metrics.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
-                <span>Open Trainer Hub</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-
-            <Link
-              href="/admin/qp"
-              className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:border-violet-400 hover:shadow-md transition-all group flex flex-col justify-between"
-            >
-              <div>
-                <div className="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs border border-violet-100">
-                  <FileCode className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-black text-slate-900 mb-1">Question Papers (Q&P)</h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Multiple question papers, audit history logs, versioning, duplication, and template creator.
-                </p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-violet-600">
-                <span>Manage Papers</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-          </div>
-
-          {/* Breakdown Summaries: Campus & Trainer */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Campus Breakdown Card */}
-            <div className="glossy-card rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center space-x-2">
-                  <Building className="w-4 h-4 text-blue-600" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                    Campus Performance Summary
-                  </h3>
-                </div>
-                <Link href="/admin/settings" className="text-2xs font-bold text-blue-600 hover:underline">
-                  Manage Campuses
-                </Link>
-              </div>
-
-              <div className="space-y-2">
-                {campusesList.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-4 text-center">No campuses registered.</p>
-                ) : (
-                  campusesList.map((c) => {
-                    const cData = stats?.campusStats?.[c.name] || { total: 0, avgScore: 0, passed: 0 };
-                    return (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs"
-                      >
-                        <div className="flex items-center space-x-2.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                          <div>
-                            <div className="text-xs font-black text-slate-900">{c.name}</div>
-                            <div className="text-2xs text-slate-500 font-medium">{cData.total} Attempt{cData.total === 1 ? '' : 's'}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs font-black text-slate-900">
-                            Avg: {cData.avgScore} / 10
-                          </div>
-                          <div className="text-2xs font-bold text-emerald-600">
-                            {cData.passed} Passed
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Trainer Breakdown Card */}
-            <div className="glossy-card rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center space-x-2">
-                  <UserCheck className="w-4 h-4 text-indigo-600" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                    Trainer Batch Performance Summary
-                  </h3>
-                </div>
-                <Link href="/admin/trainers" className="text-2xs font-bold text-indigo-600 hover:underline">
-                  View All Trainers
-                </Link>
-              </div>
-
-              <div className="space-y-2">
-                {trainersList.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-4 text-center">No trainers configured.</p>
-                ) : (
-                  trainersList.map((t) => {
-                    const tData = stats?.trainerStats?.[t.display_name] || { total: 0, avgScore: 0, passed: 0 };
-                    return (
-                      <div
-                        key={t.id}
-                        className="flex items-center justify-between p-3.5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs"
-                      >
-                        <div className="flex items-center space-x-2.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
-                          <div>
-                            <div className="text-xs font-black text-slate-900">{t.display_name}</div>
-                            <div className="text-2xs text-slate-500 font-medium">User: {t.username} &bull; {tData.total} Attempt{tData.total === 1 ? '' : 's'}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs font-black text-slate-900">
-                            Avg: {tData.avgScore} / 10
-                          </div>
-                          <div className="text-2xs font-bold text-emerald-600">
-                            {tData.passed} Passed
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Candidate Submissions Feed */}
-          <div className="glossy-card rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                  Latest Candidate Submissions (Recent Activity)
-                </span>
-              </div>
-              <Link
-                href="/admin/records"
-                className="inline-flex items-center space-x-1 text-xs font-bold text-blue-600 hover:text-blue-800"
-              >
-                <span>Open Full Filter Records Hub ({total})</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-600 border-collapse">
-                <thead className="bg-slate-50/80 text-slate-700 uppercase tracking-wider font-extrabold text-2xs border-b border-slate-200">
-                  <tr>
-                    <th className="py-3 px-4">Candidate</th>
-                    <th className="py-3 px-3">Campus</th>
-                    <th className="py-3 px-3">Trainer</th>
-                    <th className="py-3 px-3">Score</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3">Date</th>
-                    <th className="py-3 px-4 text-right">Review</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
-                        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-1 text-blue-600" />
-                        <span>Loading recent submissions...</span>
-                      </td>
-                    </tr>
-                  ) : records.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
-                        No submissions recorded yet. The database is clean.
-                      </td>
-                    </tr>
-                  ) : (
-                    records.map((r) => {
-                      const isPassed = r.percentage >= 50;
-                      return (
-                        <tr key={r.id} className="hover:bg-blue-50/40 transition-colors">
-                          <td className="py-3.5 px-4">
-                            <div className="font-black text-slate-900">{r.candidate_name}</div>
-                            <div className="text-2xs text-slate-500 font-mono">{r.candidate_email}</div>
-                          </td>
-                          <td className="py-3.5 px-3 font-bold text-blue-700">{r.campus_name || '-'}</td>
-                          <td className="py-3.5 px-3 font-bold text-indigo-700">{r.trainer_name || '-'}</td>
-                          <td className="py-3.5 px-3 font-black text-slate-900">
-                            {r.score} / {r.total_questions}
-                          </td>
-                          <td className="py-3.5 px-3">
-                            <span
-                              className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-full font-bold text-2xs ${
-                                isPassed
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
-                              }`}
-                            >
-                              {isPassed ? <span>PASSED ({r.percentage}%)</span> : <span>BELOW 5 ({r.percentage}%)</span>}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-3 font-mono text-2xs text-slate-500">
-                            {new Date(r.submitted_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </td>
-                          <td className="py-3.5 px-4 text-right">
-                            <Link
-                              href={`/admin/assessments/${r.id}`}
-                              className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 text-xs font-bold transition-all border border-slate-200"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>View</span>
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
