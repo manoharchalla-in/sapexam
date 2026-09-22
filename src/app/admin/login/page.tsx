@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, User, KeyRound, AlertCircle, Loader2 } from 'lucide-react';
+import AppLogo from '@/components/common/AppLogo';
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -48,16 +49,16 @@ function AdminLoginForm() {
 
   return (
     <main className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans text-slate-800">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
         <div className="h-2 bg-blue-600"></div>
 
         <div className="p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 mb-3 border border-blue-100 shadow-xs">
-              <Lock className="w-7 h-7" />
+            <div className="flex justify-center mb-4">
+              <AppLogo size="lg" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Admin Portal</h1>
-            <p className="text-xs text-slate-500 mt-1">SAP ABAP Assessment Management System</p>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Admin Portal</h1>
+            <p className="text-xs text-slate-500 mt-1 font-medium">SAP Assessment Management System</p>
           </div>
 
           {error && (

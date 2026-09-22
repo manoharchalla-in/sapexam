@@ -15,23 +15,21 @@ import {
   Trash2,
   Eye,
   LogOut,
-  ChevronLeft,
   ChevronRight,
-  ArrowUpDown,
   Loader2,
-  FileSpreadsheet,
-  FileJson,
-  Printer,
-  ChevronDown,
-  UserCheck,
   Building,
-  ArrowRight,
-  KeyRound,
-  Plus,
-  Copy,
   Check,
-  Link as LinkIcon,
   FileCode,
+  ArrowRight,
+  Settings,
+  Filter,
+  Layers,
+  Database,
+  Activity,
+  BarChart3,
+  UserCheck,
+  Star,
+  Sparkles,
 } from 'lucide-react';
 
 interface Stats {
@@ -51,6 +49,7 @@ interface AssessmentRecordItem {
   candidate_email: string;
   campus_name?: string;
   trainer_name?: string;
+  question_paper_title?: string;
   attempt_number: number;
   score: number;
   total_questions: number;
@@ -65,55 +64,79 @@ interface TrainerItem {
   id: number;
   username: string;
   display_name: string;
-  password: string;
-  created_at: string;
 }
 
-const CAMPUSES = ['CITY', 'CIET'];
+interface CampusItem {
+  id: number;
+  name: string;
+}
 
 export default function AdminDashboardPage() {
   const router = useRouter();
 
-
   const [records, setRecords] = useState<AssessmentRecordItem[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [trainersList, setTrainersList] = useState<TrainerItem[]>([]);
+  const [campusesList, setCampusesList] = useState<CampusItem[]>([]);
   const [total, setTotal] = useState<number>(0);
-  const [totalPages, setTotalPages] = useState<number>(1);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<boolean>(false);
 
-  const [search, setSearch] = useState<string>('');
-  const [trainerFilter, setTrainerFilter] = useState<string>('all');
-  const [campusFilter, setCampusFilter] = useState<string>('all');
-  const [paperFilter, setPaperFilter] = useState<string>('all');
-  const [scoreFilter, setScoreFilter] = useState<string>('all');
-  const [percentageFilter, setPercentageFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'name' | 'email' | 'score' | 'percentage' | 'date'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState<number>(1);
+  const [portalSettings, setPortalSettings] = useState({
+    portal_title: 'SAP Learning Portal',
+    portal_subtitle: 'Enterprise Skill Assessment System',
+    portal_assessment_name: 'SAP ABAP Assessment',
+    portal_instructions: 'Enter your details to begin the assessment.',
+  });
+  const [editAssessmentName, setEditAssessmentName] = useState('SAP ABAP Assessment');
+  const [editPortalTitle, setEditPortalTitle] = useState('SAP Learning Portal');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsSavedSuccess, setSettingsSavedSuccess] = useState(false);
 
-  const [questionPapersList, setQuestionPapersList] = useState<any[]>([]);
+  const fetchPortalSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/settings');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setPortalSettings(data.settings);
+          setEditAssessmentName(data.settings.portal_assessment_name || 'SAP ABAP Assessment');
+          setEditPortalTitle(data.settings.portal_title || 'SAP Learning Portal');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings', err);
+    }
+  }, []);
 
-  const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
-
-  // New Trainer Form State
-  const [showAddTrainerModal, setShowAddTrainerModal] = useState<boolean>(false);
-  const [newTrainerName, setNewTrainerName] = useState<string>('');
-  const [newTrainerPassword, setNewTrainerPassword] = useState<string>('123');
-  const [isCreatingTrainer, setIsCreatingTrainer] = useState<boolean>(false);
-
-  // Edit Password Modal State
-  const [editingTrainer, setEditingTrainer] = useState<TrainerItem | null>(null);
-  const [editPasswordValue, setEditPasswordValue] = useState<string>('');
-  const [isSavingPassword, setIsSavingPassword] = useState<boolean>(false);
-
-  // Copied Link Feedback
-  const [copiedUsername, setCopiedUsername] = useState<string | null>(null);
+  const handleQuickSaveSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editAssessmentName.trim()) return;
+    setIsSavingSettings(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          portal_assessment_name: editAssessmentName.trim(),
+          portal_title: editPortalTitle.trim() || 'SAP Learning Portal',
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setPortalSettings(data.settings);
+        }
+        setSettingsSavedSuccess(true);
+        setTimeout(() => setSettingsSavedSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to save settings', err);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const fetchTrainers = useCallback(async () => {
     try {
@@ -127,36 +150,22 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  const fetchQuestionPapersList = useCallback(async () => {
+  const fetchCampuses = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/question-papers');
+      const res = await fetch('/api/admin/campuses');
       if (res.ok) {
         const data = await res.json();
-        setQuestionPapersList(data.questionPapers || []);
+        setCampusesList(data.campuses || []);
       }
     } catch (err) {
-      console.error('Failed to fetch question papers', err);
+      console.error('Failed to fetch campuses', err);
     }
   }, []);
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({
-        search,
-        trainerFilter,
-        campusFilter,
-        paperFilter,
-        scoreFilter,
-        percentageFilter,
-        dateFilter,
-        sortBy,
-        sortOrder,
-        page: String(page),
-        limit: '10',
-      });
-
-      const res = await fetch(`/api/admin/results?${query.toString()}`);
+      const res = await fetch('/api/admin/results?limit=5&sortBy=date&sortOrder=desc');
       if (res.status === 401) {
         setAuthError(true);
         router.push('/admin/login');
@@ -169,167 +178,23 @@ export default function AdminDashboardPage() {
       setRecords(data.records || []);
       setStats(data.stats || null);
       setTotal(data.total || 0);
-      setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [search, trainerFilter, campusFilter, paperFilter, scoreFilter, percentageFilter, dateFilter, sortBy, sortOrder, page, router]);
+  }, [router]);
 
   useEffect(() => {
     fetchResults();
     fetchTrainers();
-    fetchQuestionPapersList();
-  }, [fetchResults, fetchTrainers, fetchQuestionPapersList]);
-
-  const handleCreateTrainer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTrainerName.trim()) return;
-    setIsCreatingTrainer(true);
-
-    try {
-      const res = await fetch('/api/admin/trainers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          displayName: newTrainerName.trim(),
-          password: newTrainerPassword.trim() || '123',
-        }),
-      });
-
-      if (res.ok) {
-        setNewTrainerName('');
-        setNewTrainerPassword('123');
-        setShowAddTrainerModal(false);
-        fetchTrainers();
-        fetchResults();
-      } else {
-        const errData = await res.json();
-        alert(errData.error || 'Failed to create trainer');
-      }
-    } catch (err) {
-      alert('Error creating trainer');
-    } finally {
-      setIsCreatingTrainer(false);
-    }
-  };
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTrainer || !editPasswordValue.trim()) return;
-    setIsSavingPassword(true);
-
-    try {
-      const res = await fetch('/api/admin/trainers', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: editingTrainer.username,
-          password: editPasswordValue.trim(),
-        }),
-      });
-
-      if (res.ok) {
-        setEditingTrainer(null);
-        setEditPasswordValue('');
-        fetchTrainers();
-      } else {
-        const errData = await res.json();
-        alert(errData.error || 'Failed to update password');
-      }
-    } catch (err) {
-      alert('Error updating password');
-    } finally {
-      setIsSavingPassword(false);
-    }
-  };
-
-  const handleDeleteTrainer = async (username: string, displayName: string) => {
-    if (!confirm(`Are you sure you want to delete trainer "${displayName}"?`)) return;
-
-    try {
-      const res = await fetch('/api/admin/trainers', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-      });
-
-      if (res.ok) {
-        fetchTrainers();
-        fetchResults();
-      } else {
-        alert('Failed to delete trainer');
-      }
-    } catch (err) {
-      alert('Error deleting trainer');
-    }
-  };
-
-  const handleCopyTrainerLink = (username: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${origin}/admin/login?user=${username}`;
-    navigator.clipboard.writeText(link);
-    setCopiedUsername(username);
-    setTimeout(() => setCopiedUsername(null), 2000);
-  };
+    fetchCampuses();
+    fetchPortalSettings();
+  }, [fetchResults, fetchTrainers, fetchCampuses, fetchPortalSettings]);
 
   const handleLogout = async () => {
     await fetch('/api/admin/auth', { method: 'DELETE' });
     router.push('/admin/login');
-  };
-
-  const handleExport = (format: 'csv' | 'json' | 'excel') => {
-    setShowExportMenu(false);
-    const query = new URLSearchParams({
-      format,
-      search,
-      trainerFilter,
-      campusFilter,
-      scoreFilter,
-      percentageFilter,
-      dateFilter,
-      sortBy,
-      sortOrder,
-    });
-    window.open(`/api/admin/export?${query.toString()}`, '_blank');
-  };
-
-  const handlePrint = () => {
-    setShowExportMenu(false);
-    window.print();
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!deleteId) return;
-    setIsDeleting(true);
-    try {
-      const res = await fetch('/api/admin/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: deleteId }),
-      });
-      if (res.ok) {
-        setDeleteId(null);
-        fetchResults();
-      } else {
-        alert('Failed to delete assessment result');
-      }
-    } catch (err) {
-      alert('Error deleting assessment record');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const toggleSort = (field: 'name' | 'email' | 'score' | 'percentage' | 'date') => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
-    }
-    setPage(1);
   };
 
   if (authError) return null;
@@ -338,72 +203,40 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       <AdminSidebar />
       <div className="lg:pl-64 flex flex-col min-h-screen min-w-0">
-        {/* Header */}
+        {/* Top Header */}
         <header className="bg-white border-b border-slate-200 py-4 px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
           <div className="flex items-center space-x-3">
             <div>
-              <h1 className="text-base font-black text-slate-950 leading-tight">Main SAP ABAP Admin Panel</h1>
-              <p className="text-xs text-slate-500 font-medium">Central Candidate Assessment & Results Management</p>
+              <h1 className="text-base font-black text-slate-950 leading-tight flex items-center space-x-2">
+                <span>Executive Dashboard</span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
+                  {portalSettings.portal_assessment_name || 'SAP ABAP Assessment'}
+                </span>
+              </h1>
+              <p className="text-xs text-slate-500 font-medium">{portalSettings.portal_subtitle || 'Central Candidate Assessment & Results Management'}</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
             <Link
-              href="/admin/qp"
-              className="inline-flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold py-2 px-3.5 rounded-lg transition-all shadow-xs"
+              href="/admin/records"
+              className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-xs"
             >
-              <FileCode className="w-4 h-4 text-indigo-600" />
-              <span>Q&P (Question Papers)</span>
+              <Filter className="w-3.5 h-3.5" />
+              <span>Filter All Assessment Records</span>
             </Link>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3.5 rounded-lg transition-all shadow-xs"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export Options</span>
-                <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
-              </button>
-
-              {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-40 text-xs text-slate-700">
-                  <button
-                    onClick={() => handleExport('csv')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                    <span>Export CSV (.csv)</span>
-                  </button>
-                  <button
-                    onClick={() => handleExport('excel')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 text-blue-600" />
-                    <span>Export Excel (.xls)</span>
-                  </button>
-                  <button
-                    onClick={() => handleExport('json')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium"
-                  >
-                    <FileJson className="w-4 h-4 text-amber-600" />
-                    <span>Export JSON (.json)</span>
-                  </button>
-                  <div className="border-t border-slate-100 my-1"></div>
-                  <button
-                    onClick={handlePrint}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 font-medium text-slate-900"
-                  >
-                    <Printer className="w-4 h-4 text-slate-600" />
-                    <span>Print / Save PDF</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            <Link
+              href="/admin/results"
+              className="inline-flex items-center space-x-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold py-2 px-3.5 rounded-xl transition-all"
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>Assessment Results</span>
+            </Link>
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center space-x-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold py-2 px-3.5 rounded-lg transition-all"
+              className="inline-flex items-center space-x-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold py-2 px-3.5 rounded-xl transition-all"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>
@@ -412,605 +245,443 @@ export default function AdminDashboardPage() {
         </header>
 
         <div className="w-full px-6 md:px-8 py-6 space-y-6 min-w-0">
+          {/* Executive Performance Metric Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Link
+              href="/admin/records"
+              className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-blue-300 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-slate-500 group-hover:text-blue-600">
+                  Total Evaluated
+                </span>
+                <Users className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+              </div>
+              <div className="text-2xl font-black text-slate-950 mt-1">{stats?.totalAttempts || 0}</div>
+              <span className="text-[11px] text-blue-600 font-bold group-hover:underline flex items-center space-x-0.5 mt-0.5">
+                <span>View All in Records Hub</span>
+                <ChevronRight className="w-3 h-3" />
+              </span>
+            </Link>
 
-        {/* Dedicated Trainer Admin Panels Grid & Management */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-            <div>
-              <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                <UserCheck className="w-4.5 h-4.5 text-indigo-600" />
-                <span>Dedicated Trainer Admin Panels & Credentials</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Manage trainer accounts, set custom passwords, and generate direct login links</p>
+            <Link
+              href="/admin/results"
+              className="bg-white rounded-2xl p-4 border border-emerald-200 shadow-xs bg-emerald-50/20 hover:border-emerald-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-emerald-800">
+                  Passed Candidates
+                </span>
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-2xl font-black text-emerald-700 mt-1">{stats?.passedCount || 0}</div>
+              <span className="text-[11px] text-emerald-600 font-bold">
+                {stats?.totalAttempts ? Math.round((stats.passedCount / stats.totalAttempts) * 100) : 0}% Pass Rate
+              </span>
+            </Link>
+
+            <Link
+              href="/admin/results"
+              className="bg-white rounded-2xl p-4 border border-rose-200 shadow-xs bg-rose-50/20 hover:border-rose-400 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-rose-800">
+                  Below 5 (Failed)
+                </span>
+                <XCircle className="w-4 h-4 text-rose-600" />
+              </div>
+              <div className="text-2xl font-black text-rose-700 mt-1">{stats?.belowFiveCount || 0}</div>
+              <span className="text-[11px] text-rose-600 font-bold">Needs Retake</span>
+            </Link>
+
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-slate-500">Average Score</span>
+                <TrendingUp className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{stats?.averageScore || 0} <span className="text-xs text-slate-400 font-normal">/ 10</span></div>
+              <span className="text-[11px] text-slate-500">{stats?.averagePercentage || 0}% overall score</span>
             </div>
 
-            <button
-              onClick={() => setShowAddTrainerModal(true)}
-              className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3.5 rounded-xl text-xs shadow-sm transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create New Trainer</span>
-            </button>
+            <div className="bg-white rounded-2xl p-4 border border-amber-200 shadow-xs bg-amber-50/20 col-span-2 md:col-span-1">
+              <div className="flex items-center justify-between">
+                <span className="text-2xs font-extrabold uppercase tracking-wider text-amber-800">Highest Score</span>
+                <Star className="w-4 h-4 text-amber-600 fill-amber-500" />
+              </div>
+              <div className="text-2xl font-black text-amber-700 mt-1">{stats?.highestScore || 0} <span className="text-xs text-amber-500 font-normal">/ 10</span></div>
+              <span className="text-[11px] text-amber-600 font-bold">Peak Result</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {trainersList.map((trainerItem) => {
-              const trainerNameUpper = trainerItem.display_name;
-              const trainerData = stats?.trainerStats?.[trainerNameUpper] || { total: 0, avgScore: 0, passed: 0 };
-              const isCopied = copiedUsername === trainerItem.username;
-
-              return (
-                <div
-                  key={trainerItem.id}
-                  className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:border-indigo-300 transition-all flex flex-col justify-between space-y-4"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-xs">
-                        TRAINER
-                      </span>
-                      <span className="text-xs font-bold text-slate-500">
-                        {trainerData.total} Attempts
-                      </span>
-                    </div>
-
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-lg font-black text-slate-900 mb-0.5">{trainerItem.display_name}</h3>
-                        <p className="text-xs text-slate-500 font-mono">User: {trainerItem.username}</p>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteTrainer(trainerItem.username, trainerItem.display_name)}
-                        className="text-slate-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition-all"
-                        title="Delete Trainer Account"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Password & Credentials Info */}
-                    <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 text-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Password:</span>
-                        <div className="flex items-center space-x-1.5">
-                          <code className="bg-white px-2 py-0.5 rounded border border-slate-200 font-mono font-bold text-slate-800">
-                            {trainerItem.password}
-                          </code>
-                          <button
-                            onClick={() => {
-                              setEditingTrainer(trainerItem);
-                              setEditPasswordValue(trainerItem.password);
-                            }}
-                            className="text-indigo-600 hover:text-indigo-800 font-bold underline text-2xs"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-slate-500 space-y-1 mt-3">
-                      <div>Avg Score: <strong className="text-slate-800">{trainerData.avgScore} / 10</strong></div>
-                      <div>Passed Candidates: <strong className="text-emerald-700">{trainerData.passed}</strong></div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <Link
-                      href={`/admin/trainer/${trainerItem.username}`}
-                      className="w-full inline-flex items-center justify-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all shadow-xs"
-                    >
-                      <span>Open {trainerItem.display_name} Admin</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-
-                    <button
-                      onClick={() => handleCopyTrainerLink(trainerItem.username)}
-                      className="w-full inline-flex items-center justify-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-2 px-3 rounded-xl text-xs border border-slate-200 transition-all"
-                    >
-                      {isCopied ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-emerald-700">Link Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Copy Trainer Login Link</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+          {/* Dynamic Assessment Configuration Banner */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-start space-x-3.5">
+                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+                  <Settings className="w-5 h-5" />
                 </div>
-              );
-            })}
-          </div>
-        </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-sm font-extrabold text-slate-950 uppercase tracking-wider">
+                      Live Assessment Configuration
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
+                      Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Dynamically customize the assessment title displayed across student exam portals and reports in real-time.
+                  </p>
+                </div>
+              </div>
 
-
-
-        {/* Filter Controls Panel */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs mb-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-              Filter All Assessment Records
-            </span>
-            <button
-              onClick={() => {
-                setSearch('');
-                setTrainerFilter('all');
-                setCampusFilter('all');
-                setScoreFilter('all');
-                setPercentageFilter('all');
-                setDateFilter('');
-                setPage(1);
-              }}
-              className="text-xs text-blue-600 hover:text-blue-800 font-bold"
-            >
-              Reset Filters
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Search
-              </label>
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Search name, email..."
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
-                />
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Link
+                  href="/admin/settings"
+                  className="inline-flex items-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 px-3 rounded-xl transition-all border border-slate-200"
+                >
+                  <span>Landing Page & Campus Settings</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center space-x-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold py-2 px-3 rounded-xl transition-all"
+                >
+                  <span>Preview Candidate Portal</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Question Paper
-              </label>
-              <select
-                value={paperFilter}
-                onChange={(e) => {
-                  setPaperFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
-              >
-                <option value="all">All Question Papers</option>
-                {questionPapersList.map((qp) => (
-                  <option key={qp.id} value={qp.id}>{qp.title}</option>
-                ))}
-              </select>
+            <form onSubmit={handleQuickSaveSettings} className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <div className="md:col-span-5 space-y-1">
+                <label className="block text-xs font-bold text-slate-700">
+                  Assessment Name (Displayed to Candidates)
+                </label>
+                <input
+                  type="text"
+                  value={editAssessmentName}
+                  onChange={(e) => setEditAssessmentName(e.target.value)}
+                  placeholder="e.g. SAP ABAP Assessment"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
+                />
+              </div>
+
+              <div className="md:col-span-4 space-y-1">
+                <label className="block text-xs font-bold text-slate-700">
+                  Portal Header Title
+                </label>
+                <input
+                  type="text"
+                  value={editPortalTitle}
+                  onChange={(e) => setEditPortalTitle(e.target.value)}
+                  placeholder="e.g. SAP Learning Portal"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
+                />
+              </div>
+
+              <div className="md:col-span-3 flex items-center space-x-2">
+                <button
+                  type="submit"
+                  disabled={isSavingSettings}
+                  className="w-full inline-flex items-center justify-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-xs transition-all disabled:opacity-50"
+                >
+                  {isSavingSettings ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save Assessment</span>
+                    </>
+                  )}
+                </button>
+                {settingsSavedSuccess && (
+                  <span className="text-xs font-bold text-emerald-600 flex items-center space-x-1 shrink-0">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Saved!</span>
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+
+          {/* Quick Navigation Gateways Hub */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link
+              href="/admin/records"
+              className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:border-blue-400 hover:shadow-md transition-all group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <Filter className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-black text-slate-900 mb-1">Filter All Assessment Records</h3>
+                <p className="text-xs text-slate-500">
+                  Search, multi-dimensional filtering by trainer, campus, score, date, and export tools.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
+                <span>Open Filter Hub</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            <Link
+              href="/admin/results"
+              className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:border-amber-400 hover:shadow-md transition-all group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <Award className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-black text-slate-900 mb-1">Assessment Results</h3>
+                <p className="text-xs text-slate-500">
+                  Official scorecards, grade classifications, distinction lists, and candidate performance analysis.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-700">
+                <span>View Results Ledger</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            <Link
+              href="/admin/trainers"
+              className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:border-indigo-400 hover:shadow-md transition-all group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-black text-slate-900 mb-1">Trainer Panels & Credentials</h3>
+                <p className="text-xs text-slate-500">
+                  Manage trainer accounts, reset passwords, copy login links, and view individual metrics.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
+                <span>Open Trainer Hub</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            <Link
+              href="/admin/qp"
+              className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:border-violet-400 hover:shadow-md transition-all group flex flex-col justify-between"
+            >
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <FileCode className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-black text-slate-900 mb-1">Question Papers (Q&P)</h3>
+                <p className="text-xs text-slate-500">
+                  Multiple question papers, audit history logs, versioning, duplication, and template creator.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-violet-600">
+                <span>Manage Papers</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          </div>
+
+          {/* Breakdown Summaries: Campus & Trainer */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Campus Breakdown Card */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center space-x-2">
+                  <Building className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                    Campus Performance Summary
+                  </h3>
+                </div>
+                <Link href="/admin/settings" className="text-2xs font-bold text-blue-600 hover:underline">
+                  Manage Campuses
+                </Link>
+              </div>
+
+              <div className="space-y-2">
+                {campusesList.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-4 text-center">No campuses registered.</p>
+                ) : (
+                  campusesList.map((c) => {
+                    const cData = stats?.campusStats?.[c.name] || { total: 0, avgScore: 0, passed: 0 };
+                    return (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100"
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                          <div>
+                            <div className="text-xs font-black text-slate-900">{c.name}</div>
+                            <div className="text-2xs text-slate-500">{cData.total} Attempt{cData.total === 1 ? '' : 's'}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-black text-slate-900">
+                            Avg: {cData.avgScore} / 10
+                          </div>
+                          <div className="text-2xs font-bold text-emerald-600">
+                            {cData.passed} Passed
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Trainer
-              </label>
-              <select
-                value={trainerFilter}
-                onChange={(e) => {
-                  setTrainerFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
-              >
-                <option value="all">All Trainers</option>
-                {trainersList.map((t) => (
-                  <option key={t.id} value={t.display_name}>{t.display_name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Trainer Breakdown Card */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <div className="flex items-center space-x-2">
+                  <UserCheck className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                    Trainer Batch Performance Summary
+                  </h3>
+                </div>
+                <Link href="/admin/trainers" className="text-2xs font-bold text-indigo-600 hover:underline">
+                  View All Trainers
+                </Link>
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Campus
-              </label>
-              <select
-                value={campusFilter}
-                onChange={(e) => {
-                  setCampusFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
-              >
-                <option value="all">All Campuses</option>
-                {CAMPUSES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Score Filter
-              </label>
-              <select
-                value={scoreFilter}
-                onChange={(e) => {
-                  setScoreFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
-              >
-                <option value="all">All Scores</option>
-                <option value="0-2">0 – 2 Marks</option>
-                <option value="3-4">3 – 4 Marks</option>
-                <option value="5-6">5 – 6 Marks</option>
-                <option value="7-8">7 – 8 Marks</option>
-                <option value="9-10">9 – 10 Marks</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Date
-              </label>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => {
-                  setDateFilter(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
-              />
+              <div className="space-y-2">
+                {trainersList.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-4 text-center">No trainers configured.</p>
+                ) : (
+                  trainersList.map((t) => {
+                    const tData = stats?.trainerStats?.[t.display_name] || { total: 0, avgScore: 0, passed: 0 };
+                    return (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100"
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                          <div>
+                            <div className="text-xs font-black text-slate-900">{t.display_name}</div>
+                            <div className="text-2xs text-slate-500">User: {t.username} &bull; {tData.total} Attempt{tData.total === 1 ? '' : 's'}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-black text-slate-900">
+                            Avg: {tData.avgScore} / 10
+                          </div>
+                          <div className="text-2xs font-bold text-emerald-600">
+                            {tData.passed} Passed
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Results Table */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-              <p className="text-sm font-semibold text-slate-600">Loading assessment records...</p>
+          {/* Recent Candidate Submissions Feed */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                  Latest Candidate Submissions (Recent Activity)
+                </span>
+              </div>
+              <Link
+                href="/admin/records"
+                className="inline-flex items-center space-x-1 text-xs font-bold text-blue-600 hover:text-blue-800"
+              >
+                <span>Open Full Filter Records Hub ({total})</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-          ) : records.length === 0 ? (
-            <div className="p-12 text-center">
-              <FileSpreadsheet className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-              <h3 className="text-base font-bold text-slate-800">No Assessment Results Found</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 font-medium">
-                No matching assessment records found for selected filters.
-              </p>
-            </div>
-          ) : (
+
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
+              <table className="w-full text-left text-xs text-slate-600 border-collapse">
+                <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider font-extrabold text-2xs border-b border-slate-200">
                   <tr>
-                    <th onClick={() => toggleSort('name')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-all select-none">
-                      <div className="flex items-center space-x-1">
-                        <span>Candidate Name</span>
-                        <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                      </div>
-                    </th>
-
-                    <th onClick={() => toggleSort('email')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-all select-none">
-                      <div className="flex items-center space-x-1">
-                        <span>Email ID</span>
-                        <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                      </div>
-                    </th>
-
-                    <th className="py-3.5 px-4">Question Paper</th>
-                    <th className="py-3.5 px-4">Campus</th>
-                    <th className="py-3.5 px-4">Trainer</th>
-
-                    <th onClick={() => toggleSort('score')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-all select-none text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        <span>Score</span>
-                        <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                      </div>
-                    </th>
-
-                    <th onClick={() => toggleSort('percentage')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-all select-none text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        <span>Percentage</span>
-                        <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                      </div>
-                    </th>
-
-                    <th className="py-3.5 px-3 text-center text-emerald-700">Correct</th>
-                    <th className="py-3.5 px-3 text-center text-red-600">Incorrect</th>
-                    <th className="py-3.5 px-3 text-center text-slate-500">Unanswered</th>
-
-                    <th onClick={() => toggleSort('date')} className="py-3.5 px-4 cursor-pointer hover:bg-slate-100 transition-all select-none">
-                      <div className="flex items-center space-x-1">
-                        <span>Submitted At</span>
-                        <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                      </div>
-                    </th>
-
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4">Candidate</th>
+                    <th className="py-3 px-3">Campus</th>
+                    <th className="py-3 px-3">Trainer</th>
+                    <th className="py-3 px-3">Score</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3">Date</th>
+                    <th className="py-3 px-4 text-right">Review</th>
                   </tr>
                 </thead>
-
-                <tbody className="divide-y divide-slate-200">
-                  {records.map((r) => {
-                    const dateFormatted = new Date(r.submitted_at).toLocaleString('en-US', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    });
-
-                    return (
-                      <tr key={r.id} className="hover:bg-slate-50/80 transition-all">
-                        <td className="py-3.5 px-4 font-bold text-slate-900">
-                          {r.candidate_name}
-                          {r.attempt_number > 1 && (
-                            <span className="ml-2 px-1.5 py-0.5 text-3xs font-semibold rounded bg-blue-100 text-blue-800">
-                              Attempt #{r.attempt_number}
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto mb-1 text-blue-600" />
+                        <span>Loading recent submissions...</span>
+                      </td>
+                    </tr>
+                  ) : records.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        No submissions recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    records.map((r) => {
+                      const isPassed = r.percentage >= 50;
+                      return (
+                        <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900">{r.candidate_name}</div>
+                            <div className="text-2xs text-slate-500 font-mono">{r.candidate_email}</div>
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-blue-700">{r.campus_name || '-'}</td>
+                          <td className="py-3 px-3 font-semibold text-indigo-700">{r.trainer_name || '-'}</td>
+                          <td className="py-3 px-3 font-black text-slate-900">
+                            {r.score} / {r.total_questions}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md font-bold text-2xs ${
+                                isPassed
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                              }`}
+                            >
+                              {isPassed ? <span>PASSED ({r.percentage}%)</span> : <span>BELOW 5 ({r.percentage}%)</span>}
                             </span>
-                          )}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-slate-600 font-medium">{r.candidate_email}</td>
-
-                        <td className="py-3.5 px-4 font-bold text-amber-800 bg-amber-50/60 rounded-lg whitespace-nowrap">
-                          {(r as any).question_paper_title || 'SAP ABAP Assessment 01'}
-                        </td>
-
-                        <td className="py-3.5 px-4 font-bold text-blue-700 bg-blue-50/50 rounded-lg">{r.campus_name || '-'}</td>
-                        <td className="py-3.5 px-4 font-bold text-indigo-700 bg-indigo-50/50 rounded-lg">{r.trainer_name || '-'}</td>
-
-                        <td className="py-3.5 px-4 text-center font-black text-slate-900">
-                          {r.score} / {r.total_questions}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-center font-bold">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs ${
-                            r.percentage >= 80
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : r.percentage >= 50
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {r.percentage}%
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-3 text-center font-bold text-emerald-700">{r.correct_answers}</td>
-                        <td className="py-3.5 px-3 text-center font-bold text-red-600">{r.incorrect_answers}</td>
-                        <td className="py-3.5 px-3 text-center font-semibold text-slate-500">{r.unanswered_answers}</td>
-
-                        <td className="py-3.5 px-4 text-slate-500 text-xs font-medium whitespace-nowrap">
-                          {dateFormatted}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-right space-x-2">
-                          <Link
-                            href={`/admin/assessments/${r.id}`}
-                            className="inline-flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2.5 py-1.5 rounded-lg border border-blue-200 text-xs transition-all"
-                            title="View Details"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>View</span>
-                          </Link>
-
-                          <button
-                            onClick={() => setDeleteId(r.id)}
-                            className="inline-flex items-center space-x-1 bg-red-50 hover:bg-red-100 text-red-700 font-bold px-2.5 py-1.5 rounded-lg border border-red-200 text-xs transition-all"
-                            title="Delete Record"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Delete</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          </td>
+                          <td className="py-3 px-3 font-mono text-2xs text-slate-500">
+                            {new Date(r.submitted_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <Link
+                              href={`/admin/assessments/${r.id}`}
+                              className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View</span>
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
-
-          {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
-              <span className="text-xs text-slate-600 font-medium">
-                Showing page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} total results)
-              </span>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-700 disabled:opacity-40"
-                >
-                  <ChevronLeft className="w-4 h-4 inline" />
-                  <span>Prev</span>
-                </button>
-
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-700 disabled:opacity-40"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-4 h-4 inline" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Delete Assessment Modal */}
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Assessment Result?</h3>
-            <p className="text-xs text-slate-600 mb-6">
-              This action cannot be undone. The selected attempt record will be permanently deleted.
-            </p>
-
-            <div className="flex items-center justify-end space-x-3">
-              <button
-                onClick={() => setDeleteId(null)}
-                disabled={isDeleting}
-                className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={isDeleting}
-                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
           </div>
         </div>
-      )}
-
-      {/* Create New Trainer Modal */}
-      {showAddTrainerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200">
-            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-                <Plus className="w-5 h-5 text-indigo-600" />
-                <span>Create New Trainer</span>
-              </h3>
-              <button
-                onClick={() => setShowAddTrainerModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateTrainer} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Trainer Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newTrainerName}
-                  onChange={(e) => setNewTrainerName(e.target.value)}
-                  placeholder="e.g. RAMESH or NANI"
-                  required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 uppercase focus:outline-none focus:border-indigo-600"
-                />
-                <p className="text-2xs text-slate-500 mt-1">Username will be generated automatically in lowercase.</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Admin Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newTrainerPassword}
-                  onChange={(e) => setNewTrainerPassword(e.target.value)}
-                  placeholder="123"
-                  required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-600 font-mono"
-                />
-                <p className="text-2xs text-slate-500 mt-1">Default password is set to <strong>123</strong>.</p>
-              </div>
-
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddTrainerModal(false)}
-                  disabled={isCreatingTrainer}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreatingTrainer}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm flex items-center space-x-1"
-                >
-                  {isCreatingTrainer ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <span>Create Trainer</span>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Trainer Password Modal */}
-      {editingTrainer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200">
-            <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-                <KeyRound className="w-5 h-5 text-indigo-600" />
-                <span>Update Password</span>
-              </h3>
-              <button
-                onClick={() => setEditingTrainer(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div>
-                <span className="text-xs text-slate-500">Trainer:</span>
-                <div className="text-sm font-black text-slate-900">{editingTrainer.display_name}</div>
-                <div className="text-2xs text-slate-500 font-mono">Username: {editingTrainer.username}</div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  New Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={editPasswordValue}
-                  onChange={(e) => setEditPasswordValue(e.target.value)}
-                  placeholder="Enter new password"
-                  required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-600 font-mono"
-                />
-              </div>
-
-              <div className="flex items-center justify-end space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingTrainer(null)}
-                  disabled={isSavingPassword}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingPassword}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm"
-                >
-                  {isSavingPassword ? 'Saving...' : 'Save Password'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
       </div>
     </div>
   );

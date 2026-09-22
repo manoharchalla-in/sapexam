@@ -10,6 +10,8 @@ import {
   saveQuestionForPaper,
   deleteQuestion,
   reorderQuestions,
+  duplicateQuestionPaper,
+  createQuestionPaperFromTemplate,
 } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
@@ -82,6 +84,38 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, question });
+    }
+
+    if (action === 'duplicate_paper') {
+      const { sourcePaperId, newTitle } = body;
+      if (!sourcePaperId) {
+        return NextResponse.json({ error: 'sourcePaperId is required' }, { status: 400 });
+      }
+      const cloned = duplicateQuestionPaper(parseInt(sourcePaperId, 10), newTitle);
+      if (!cloned) {
+        return NextResponse.json({ error: 'Failed to duplicate question paper' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, questionPaper: cloned, message: 'Question paper duplicated successfully' });
+    }
+
+    if (action === 'create_from_template') {
+      const { templateId, template_id, title, description, category, duration_minutes, passing_marks, status } = body;
+      const targetTplId = templateId || template_id;
+      if (!targetTplId) {
+        return NextResponse.json({ error: 'templateId is required' }, { status: 400 });
+      }
+      const created = createQuestionPaperFromTemplate(parseInt(String(targetTplId), 10), {
+        title,
+        description,
+        category,
+        duration_minutes: duration_minutes ? parseInt(duration_minutes, 10) : undefined,
+        passing_marks: passing_marks ? parseFloat(passing_marks) : undefined,
+        status: status || 'Draft',
+      });
+      if (!created) {
+        return NextResponse.json({ error: 'Failed to create question paper from template' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, questionPaper: created, message: 'Question paper created from template' });
     }
 
     if (action === 'reorder_questions') {

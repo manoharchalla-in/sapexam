@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, Loader2, User, Mail, HelpCircle, Clock } from 'lucide-react';
 import CandidateQuestionRenderer from '@/components/candidate/CandidateQuestionRenderer';
+import AppLogo from '@/components/common/AppLogo';
 
 interface ClientQuestion {
   id: number;
@@ -27,6 +28,8 @@ export default function AssessmentTestPage() {
     sessionId: string;
   } | null>(null);
 
+  const [paperTitle, setPaperTitle] = useState<string>('SAP ABAP Assessment');
+  const [paperCategory, setPaperCategory] = useState<string>('SAP ABAP');
   const [questions, setQuestions] = useState<ClientQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
@@ -154,6 +157,10 @@ export default function AssessmentTestPage() {
         throw new Error('Invalid question format received');
       }
       setQuestions(data.questions);
+      if (data.questionPaper) {
+        if (data.questionPaper.title) setPaperTitle(data.questionPaper.title);
+        if (data.questionPaper.category) setPaperCategory(data.questionPaper.category);
+      }
     } catch (err: any) {
       setFetchError(err.message || 'Error loading assessment question paper.');
     } finally {
@@ -182,12 +189,13 @@ export default function AssessmentTestPage() {
 
 
   if (isLoadingQuestions) {
+    const displayTitle = session?.paperTitle || paperTitle || 'Skill Assessment';
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-800">
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 text-center max-w-md w-full">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
           <h2 className="text-xl font-bold text-slate-900">Loading Assessment Paper</h2>
-          <p className="text-sm text-slate-500 mt-2">Preparing your 10 SAP ABAP questions...</p>
+          <p className="text-sm text-slate-500 mt-2">Preparing your questions for {displayTitle}...</p>
         </div>
       </main>
     );
@@ -223,15 +231,13 @@ export default function AssessmentTestPage() {
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col justify-between">
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 text-white font-bold px-3 py-1.5 rounded-lg text-sm shadow-xs">
-              SAP ABAP
-            </div>
+          <div className="flex items-center space-x-3.5">
+            <AppLogo size="sm" />
             <div>
-              <h1 className="text-base font-bold text-slate-900 leading-tight">
-                {session?.paperTitle || 'SAP ABAP Assessment'}
+              <h1 className="text-base font-black text-slate-900 leading-tight">
+                {session?.paperTitle || paperTitle || 'Skill Assessment'}
               </h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-0.5 font-medium">
                 <span className="flex items-center space-x-1">
@@ -461,7 +467,7 @@ export default function AssessmentTestPage() {
 
       {/* Footer */}
       <footer className="py-3 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
-        © 2026 SAP ABAP Online Test System.
+        © {new Date().getFullYear()} {session?.paperTitle || paperTitle || 'Skill Assessment System'}. All rights reserved.
       </footer>
     </main>
   );

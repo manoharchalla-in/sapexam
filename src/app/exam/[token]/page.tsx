@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateCandidateInput } from '@/lib/validation';
 import { User, Mail, ArrowRight, BookOpenCheck, AlertCircle, Clock, Award, FileText } from 'lucide-react';
+import AppLogo from '@/components/common/AppLogo';
 
 const CAMPUS_OPTIONS = ['CITY', 'CIET'];
 
@@ -31,6 +32,7 @@ export default function ExamLandingPage({
   const [email, setEmail] = useState('');
   const [campusName, setCampusName] = useState('');
   const [trainerName, setTrainerName] = useState('');
+  const [campusOptions, setCampusOptions] = useState<string[]>(['CITY', 'CIET']);
   const [trainerOptions, setTrainerOptions] = useState<string[]>(['APPALARAJU', 'NOOKARAJU', 'DAKSHAYINI', 'NANI']);
 
   const [nameError, setNameError] = useState('');
@@ -60,6 +62,15 @@ export default function ExamLandingPage({
           const trData = await trRes.json();
           if (trData.trainers && trData.trainers.length > 0) {
             setTrainerOptions(trData.trainers.map((t: any) => t.display_name));
+          }
+        }
+
+        // Fetch Campuses
+        const cpRes = await fetch('/api/admin/campuses');
+        if (cpRes.ok) {
+          const cpData = await cpRes.json();
+          if (cpData.campuses && cpData.campuses.length > 0) {
+            setCampusOptions(cpData.campuses.map((c: any) => c.name));
           }
         }
       } catch (err: any) {
@@ -157,13 +168,11 @@ export default function ExamLandingPage({
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans text-slate-800">
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 px-6 sm:px-12 py-4 flex items-center justify-between shadow-xs sticky top-0 z-30">
+      <header className="bg-white border-b border-slate-200 px-6 sm:px-12 py-3.5 flex items-center justify-between shadow-2xs sticky top-0 z-30">
         <div className="flex items-center space-x-3.5">
-          <div className="bg-blue-600 text-white font-extrabold px-3 py-1.5 rounded-lg text-sm shadow-xs tracking-wider">
-            SAP
-          </div>
+          <AppLogo size="md" />
           <div>
-            <h1 className="text-base font-bold text-slate-900 leading-tight">SAP Learning Portal</h1>
+            <h1 className="text-base font-black text-slate-900 leading-tight">SAP Learning Portal</h1>
             <p className="text-xs text-slate-500 font-medium">Enterprise Skill Assessment System</p>
           </div>
         </div>
@@ -287,7 +296,7 @@ export default function ExamLandingPage({
                   CAMPUS NAME <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2 pt-1">
-                  {CAMPUS_OPTIONS.map((opt) => (
+                  {campusOptions.map((opt) => (
                     <label
                       key={opt}
                       onClick={() => {

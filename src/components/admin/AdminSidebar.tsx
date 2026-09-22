@@ -11,6 +11,8 @@ import {
   Activity,
   BarChart3,
   UserCheck,
+  Filter,
+  Award,
   LogOut,
   Menu,
   X,
@@ -19,6 +21,7 @@ import {
   Settings,
   Sparkles,
 } from 'lucide-react';
+import AppLogo from '@/components/common/AppLogo';
 
 interface SidebarProps {
   currentRole?: string;
@@ -35,12 +38,16 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
   };
 
   const navItems = [
-    { label: 'Dashboard & Results', href: '/admin', icon: LayoutDashboard },
+    { label: 'Dashboard & Overview', href: '/admin', icon: LayoutDashboard },
+    { label: 'Assessment Results', href: '/admin/results', icon: Award },
+    { label: 'Filter All Assessment Records', href: '/admin/records', icon: Filter },
+    { label: 'Trainer Panels & Credentials', href: '/admin/trainers', icon: UserCheck },
     { label: 'Question Papers (Q&P)', href: '/admin/qp', icon: FileCode },
     { label: 'Question Bank', href: '/admin/bank', icon: Database },
     { label: 'Exam Templates', href: '/admin/templates', icon: Layers },
     { label: 'Live Monitoring', href: '/admin/live', icon: Activity },
     { label: 'Analytics & Pass Rates', href: '/admin/analytics', icon: BarChart3 },
+    { label: 'Landing Page & Settings', href: '/admin/settings', icon: Settings },
   ];
 
   return (
@@ -48,9 +55,7 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
       {/* Mobile Top Bar */}
       <div className="lg:hidden bg-white border-b border-slate-200 py-3 px-4 flex items-center justify-between sticky top-0 z-40 shadow-xs">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-extrabold flex items-center justify-center text-xs shadow-xs">
-            SAP
-          </div>
+          <AppLogo size="sm" />
           <div>
             <h2 className="text-sm font-bold text-slate-950">SAP ABAP Admin</h2>
             <p className="text-[10px] text-slate-500 font-medium">Enterprise Assessment Portal</p>
@@ -81,10 +86,8 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
       >
         {/* Header */}
         <div>
-          <div className="p-6 border-b border-slate-100 flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-sm">
-              SAP
-            </div>
+          <div className="p-5 border-b border-slate-100 flex items-center space-x-3">
+            <AppLogo size="md" />
             <div>
               <h1 className="text-sm font-black text-slate-950 tracking-tight">Main Admin Panel</h1>
               <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-0.5">

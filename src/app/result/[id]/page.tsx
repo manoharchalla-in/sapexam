@@ -25,6 +25,7 @@ interface ReviewItem {
   userAnswerText: string;
   correctAnswerKey: string;
   correctAnswerText: string;
+  explanation?: string;
   status: 'correct' | 'incorrect' | 'unanswered';
 }
 
@@ -32,6 +33,9 @@ interface ResultData {
   id: string;
   candidate_name: string;
   candidate_email: string;
+  campus_name?: string;
+  trainer_name?: string;
+  question_paper_title?: string;
   attempt_number: number;
   score: number;
   total_questions: number;
@@ -133,7 +137,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 {isPassed ? `Congratulations, ${data.candidate_name}!` : `Assessment Finished, ${data.candidate_name}`}
               </h1>
-              <p className="text-sm text-slate-600 mt-1">Your SAP ABAP Assessment Result</p>
+              <p className="text-sm text-slate-600 mt-1">Your {(data as any).question_paper_title || 'Assessment'} Result</p>
             </div>
 
             {/* Candidate Details Badge */}
@@ -269,6 +273,13 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                         <span className="font-bold text-emerald-700">{item.correctAnswerText}</span>
                       </div>
                     </div>
+
+                    {item.explanation && (
+                      <div className="mt-3 text-xs text-slate-600 bg-blue-50/60 p-3 rounded-xl border border-blue-100 font-medium">
+                        <strong className="text-blue-900 font-bold">Explanation: </strong>
+                        {item.explanation}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -278,7 +289,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       </div>
 
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white mt-12">
-        © 2026 SAP ABAP Online Test System. All rights reserved.
+        © {new Date().getFullYear()} {(data as any).question_paper_title || 'Online Assessment System'}. All rights reserved.
       </footer>
     </main>
   );

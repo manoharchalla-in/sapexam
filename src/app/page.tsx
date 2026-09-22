@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { validateCandidateInput } from '@/lib/validation';
 import { User, Mail, ArrowRight, BookOpenCheck } from 'lucide-react';
+import AppLogo from '@/components/common/AppLogo';
 
 const CAMPUS_OPTIONS = ['CITY', 'CIET'];
 
@@ -13,7 +14,15 @@ export default function CandidateLoginPage() {
   const [email, setEmail] = useState('');
   const [campusName, setCampusName] = useState('');
   const [trainerName, setTrainerName] = useState('');
+  
+  const [campusOptions, setCampusOptions] = useState<string[]>(['CITY', 'CIET']);
   const [trainerOptions, setTrainerOptions] = useState<string[]>(['APPALARAJU', 'NOOKARAJU', 'DAKSHAYINI', 'NANI']);
+  const [portalSettings, setPortalSettings] = useState({
+    portal_title: 'SAP Learning Portal',
+    portal_subtitle: 'Enterprise Skill Assessment System',
+    portal_assessment_name: 'SAP ABAP Assessment',
+    portal_instructions: 'Enter your details to begin the assessment.',
+  });
 
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -22,20 +31,39 @@ export default function CandidateLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
-    async function loadTrainers() {
+    async function loadData() {
       try {
-        const res = await fetch('/api/admin/trainers');
-        if (res.ok) {
-          const data = await res.json();
+        // Load Trainers
+        const trRes = await fetch('/api/admin/trainers');
+        if (trRes.ok) {
+          const data = await trRes.json();
           if (data.trainers && data.trainers.length > 0) {
             setTrainerOptions(data.trainers.map((t: any) => t.display_name));
           }
         }
+
+        // Load Campuses
+        const cpRes = await fetch('/api/admin/campuses');
+        if (cpRes.ok) {
+          const data = await cpRes.json();
+          if (data.campuses && data.campuses.length > 0) {
+            setCampusOptions(data.campuses.map((c: any) => c.name));
+          }
+        }
+
+        // Load Portal Settings
+        const stRes = await fetch('/api/admin/settings');
+        if (stRes.ok) {
+          const data = await stRes.json();
+          if (data.settings) {
+            setPortalSettings((prev) => ({ ...prev, ...data.settings }));
+          }
+        }
       } catch (err) {
-        console.error('Failed to load trainers', err);
+        console.error('Failed to load landing page options', err);
       }
     }
-    loadTrainers();
+    loadData();
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,6 +104,7 @@ export default function CandidateLoginPage() {
       trainerName: trainerName,
       sessionId,
       startedAt: new Date().toISOString(),
+      paperTitle: portalSettings.portal_assessment_name || 'SAP ABAP Assessment',
     };
 
     sessionStorage.setItem('sap_assessment_session', JSON.stringify(sessionData));
@@ -85,14 +114,12 @@ export default function CandidateLoginPage() {
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans antialiased text-slate-800">
       {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 px-6 sm:px-12 py-4 flex items-center justify-between shadow-xs sticky top-0 z-30">
+      <header className="bg-white border-b border-slate-200 px-6 sm:px-12 py-3.5 flex items-center justify-between shadow-2xs sticky top-0 z-30">
         <div className="flex items-center space-x-3.5">
-          <div className="bg-blue-600 text-white font-extrabold px-3 py-1.5 rounded-lg text-sm shadow-xs tracking-wider">
-            SAP
-          </div>
+          <AppLogo size="md" />
           <div>
-            <h1 className="text-base font-bold text-slate-900 leading-tight">SAP Learning Portal</h1>
-            <p className="text-xs text-slate-500 font-medium">Enterprise Skill Assessment System</p>
+            <h1 className="text-base font-black text-slate-900 leading-tight">{portalSettings.portal_title}</h1>
+            <p className="text-xs text-slate-500 font-medium">{portalSettings.portal_subtitle}</p>
           </div>
         </div>
       </header>
@@ -107,8 +134,8 @@ export default function CandidateLoginPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 mb-4 border border-blue-100 shadow-xs">
                 <BookOpenCheck className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">SAP ABAP Assessment</h2>
-              <p className="text-sm text-slate-500 mt-2 font-medium">Enter your details to begin the assessment.</p>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{portalSettings.portal_assessment_name}</h2>
+              <p className="text-sm text-slate-500 mt-2 font-medium">{portalSettings.portal_instructions}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -186,7 +213,7 @@ export default function CandidateLoginPage() {
                   CAMPUS NAME <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2.5 pt-1">
-                  {CAMPUS_OPTIONS.map((opt) => (
+                  {campusOptions.map((opt) => (
                     <label
                       key={opt}
                       onClick={() => {
@@ -280,7 +307,7 @@ export default function CandidateLoginPage() {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
-        © 2026 SAP ABAP Online Test System. All rights reserved.
+        © {new Date().getFullYear()} {portalSettings.portal_title || 'SAP Online Test System'}. All rights reserved.
       </footer>
     </main>
   );

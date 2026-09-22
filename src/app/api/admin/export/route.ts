@@ -12,6 +12,9 @@ export async function GET(req: NextRequest) {
 
   const format = searchParams.get('format') || 'csv';
   const search = searchParams.get('search') || undefined;
+  const trainerFilter = searchParams.get('trainerFilter') || 'all';
+  const campusFilter = searchParams.get('campusFilter') || 'all';
+  const paperFilter = searchParams.get('paperFilter') || 'all';
   const scoreFilter = searchParams.get('scoreFilter') || 'all';
   const percentageFilter = searchParams.get('percentageFilter') || 'all';
   const dateFilter = searchParams.get('dateFilter') || undefined;
@@ -20,6 +23,9 @@ export async function GET(req: NextRequest) {
 
   const records = getAllResultsForExport({
     search,
+    trainerFilter,
+    campusFilter,
+    paperFilter,
     scoreFilter,
     percentageFilter,
     dateFilter,
@@ -33,6 +39,7 @@ export async function GET(req: NextRequest) {
     candidate_email: r.candidate_email,
     campus_name: r.campus_name || 'N/A',
     trainer_name: r.trainer_name || 'N/A',
+    question_paper_title: r.question_paper_title || 'SAP ABAP Assessment',
     attempt_number: r.attempt_number,
     score: r.score,
     total_questions: r.total_questions,
@@ -54,12 +61,13 @@ export async function GET(req: NextRequest) {
   }
 
   if (format === 'excel') {
-    const headers = ['Candidate Name', 'Email ID', 'Campus Name', 'Trainer Name', 'Attempt #', 'Score', 'Total Questions', 'Percentage', 'Correct', 'Incorrect', 'Unanswered', 'Submitted At'];
+    const headers = ['Candidate Name', 'Email ID', 'Campus Name', 'Trainer Name', 'Question Paper', 'Attempt #', 'Score', 'Total Questions', 'Percentage', 'Correct', 'Incorrect', 'Unanswered', 'Submitted At'];
     const rows = formattedRecords.map((r) => [
       r.candidate_name,
       r.candidate_email,
       r.campus_name,
       r.trainer_name,
+      r.question_paper_title,
       r.attempt_number,
       r.score,
       r.total_questions,
@@ -80,7 +88,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const headers = ['Candidate Name', 'Email ID', 'Campus Name', 'Trainer Name', 'Attempt #', 'Score', 'Total Questions', 'Percentage', 'Correct', 'Incorrect', 'Unanswered', 'Submitted At'];
+  const headers = ['Candidate Name', 'Email ID', 'Campus Name', 'Trainer Name', 'Question Paper', 'Attempt #', 'Score', 'Total Questions', 'Percentage', 'Correct', 'Incorrect', 'Unanswered', 'Submitted At'];
 
   const escapeCSV = (field: any) => {
     const str = String(field ?? '');
@@ -95,6 +103,7 @@ export async function GET(req: NextRequest) {
     escapeCSV(r.candidate_email),
     escapeCSV(r.campus_name),
     escapeCSV(r.trainer_name),
+    escapeCSV(r.question_paper_title),
     escapeCSV(r.attempt_number),
     escapeCSV(r.score),
     escapeCSV(r.total_questions),

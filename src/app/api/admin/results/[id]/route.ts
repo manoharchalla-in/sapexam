@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/auth';
-import { getRecordById } from '@/lib/db';
-import { SAP_ABAP_QUESTIONS } from '@/lib/questions';
+import { getRecordById, getQuestionsByPaperId, getQuestionPaperById } from '@/lib/db';
 
 export async function GET(
   req: NextRequest,
@@ -26,23 +25,35 @@ export async function GET(
     parsedAnswers = {};
   }
 
-  const review = SAP_ABAP_QUESTIONS.map((q) => {
+  const paperId = record.question_paper_id || 1;
+  const paper = getQuestionPaperById(paperId);
+  const dbQuestions = getQuestionsByPaperId(paperId);
+
+  const review = dbQuestions.map((q) => {
     const qKey = String(q.id);
-    const userAnswerKey = parsedAnswers[qKey] || null;
-    const isCorrect = userAnswerKey === q.correctAnswer;
+    const userAnswerKey = (parsedAnswers[qKey] || parsedAnswers[q.id as any] || '').trim().toUpperCase();
+    const isCorrect = userAnswerKey === q.correct_answer.trim().toUpperCase();
     const isUnanswered = !userAnswerKey;
 
-    const userAnswerOption = q.options.find((o) => o.key === userAnswerKey);
-    const correctAnswerOption = q.options.find((o) => o.key === q.correctAnswer);
+    const options = [
+      { key: 'A', text: q.option_a },
+      { key: 'B', text: q.option_b },
+      { key: 'C', text: q.option_c },
+      { key: 'D', text: q.option_d },
+    ];
+
+    const userAnswerOption = options.find((o) => o.key === userAnswerKey);
+    const correctAnswerOption = options.find((o) => o.key === q.correct_answer.toUpperCase());
 
     return {
       id: q.id,
-      question: q.question,
-      options: q.options,
+      question: q.question_text,
+      options,
       userAnswerKey,
       userAnswerText: userAnswerOption ? `${userAnswerOption.key}. ${userAnswerOption.text}` : 'Unanswered',
-      correctAnswerKey: q.correctAnswer,
+      correctAnswerKey: q.correct_answer.toUpperCase(),
       correctAnswerText: correctAnswerOption ? `${correctAnswerOption.key}. ${correctAnswerOption.text}` : '',
+      explanation: q.explanation || '',
       status: isUnanswered ? 'unanswered' : isCorrect ? 'correct' : 'incorrect',
     };
   });
@@ -53,6 +64,8 @@ export async function GET(
     candidate_email: record.candidate_email,
     campus_name: record.campus_name || 'N/A',
     trainer_name: record.trainer_name || 'N/A',
+    question_paper_id: record.question_paper_id,
+    question_paper_title: record.question_paper_title || paper?.title || 'SAP ABAP Assessment',
     attempt_number: record.attempt_number,
     score: record.score,
     total_questions: record.total_questions,

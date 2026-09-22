@@ -77,8 +77,41 @@ db.exec(`
     FOREIGN KEY(question_paper_id) REFERENCES question_papers(id) ON DELETE CASCADE
   );
 
-  CREATE INDEX IF NOT EXISTS idx_qp_public_token ON question_papers(public_token);
-  CREATE INDEX IF NOT EXISTS idx_questions_qp_id ON questions(question_paper_id);
+  CREATE TABLE IF NOT EXISTS campuses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS portal_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS question_paper_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_paper_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    details TEXT DEFAULT '',
+    performed_by TEXT DEFAULT 'Admin',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(question_paper_id) REFERENCES question_papers(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS exam_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    category TEXT NOT NULL DEFAULT 'SAP ABAP',
+    total_questions INTEGER NOT NULL DEFAULT 10,
+    duration_minutes INTEGER NOT NULL DEFAULT 30,
+    passing_marks REAL NOT NULL DEFAULT 5,
+    max_marks REAL NOT NULL DEFAULT 10,
+    difficulty TEXT DEFAULT 'Intermediate',
+    config_json TEXT DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 try {
@@ -96,6 +129,26 @@ try {
 try {
   db.exec(`ALTER TABLE assessment_results ADD COLUMN question_paper_title TEXT DEFAULT ''`);
 } catch (e) {}
+
+// Seed default campuses if empty
+const campusCount = (db.prepare(`SELECT COUNT(*) as count FROM campuses`).get() as { count: number })?.count || 0;
+if (campusCount === 0) {
+  const seedCampuses = ['CITY', 'CIET'];
+  const insertCampus = db.prepare(`INSERT OR IGNORE INTO campuses (name, created_at) VALUES (?, ?)`);
+  const now = new Date().toISOString();
+  seedCampuses.forEach((c) => {
+    insertCampus.run(c, now);
+  });
+}
+
+// Seed default portal settings
+const portalTitle = db.prepare(`SELECT value FROM portal_settings WHERE key = 'portal_title'`).get();
+if (!portalTitle) {
+  db.prepare(`INSERT INTO portal_settings (key, value) VALUES ('portal_title', 'SAP Learning Portal')`).run();
+  db.prepare(`INSERT INTO portal_settings (key, value) VALUES ('portal_subtitle', 'Enterprise Skill Assessment System')`).run();
+  db.prepare(`INSERT INTO portal_settings (key, value) VALUES ('portal_assessment_name', 'SAP ABAP Assessment')`).run();
+  db.prepare(`INSERT INTO portal_settings (key, value) VALUES ('portal_instructions', 'Enter your details to begin the assessment.')`).run();
+}
 
 // Seed default trainers if empty
 const trainerCount = (db.prepare(`SELECT COUNT(*) as count FROM trainers`).get() as { count: number })?.count || 0;
@@ -181,6 +234,93 @@ if (qpCount === 0) {
 
   defaultQuestions.forEach((item, idx) => {
     insertQ.run(qpId, item.q, item.a, item.b, item.c, item.d, item.correct, item.marks, item.exp, idx + 1, now);
+  });
+
+  // Log initial creation history
+  try {
+    db.prepare(`
+      INSERT INTO question_paper_history (question_paper_id, action, details, performed_by, created_at)
+      VALUES (?, 'created', 'Initial question paper created and published with 10 questions', 'System Admin', ?)
+    `).run(qpId, now);
+  } catch (e) {}
+}
+
+// Seed default Exam Templates if empty
+const templateCount = (db.prepare(`SELECT COUNT(*) as count FROM exam_templates`).get() as { count: number })?.count || 0;
+if (templateCount === 0) {
+  const now = new Date().toISOString();
+  const insertTpl = db.prepare(`
+    INSERT INTO exam_templates (title, description, category, total_questions, duration_minutes, passing_marks, max_marks, difficulty, config_json, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const initialTemplates = [
+    {
+      title: 'SAP ABAP Standard Technical Test',
+      description: 'Default 10-question evaluation covering ABAP Syntax, SE11, SE38, and Internal Tables.',
+      category: 'SAP ABAP',
+      total_questions: 10,
+      duration_minutes: 30,
+      passing_marks: 5,
+      max_marks: 10,
+      difficulty: 'Intermediate',
+    },
+    {
+      title: 'SAP ABAP Comprehensive Assessment',
+      description: '20-question deep dive into ABAP Objects, Modularization, Performance (ST05/SAT), and Dictionary.',
+      category: 'SAP ABAP',
+      total_questions: 20,
+      duration_minutes: 60,
+      passing_marks: 12,
+      max_marks: 20,
+      difficulty: 'Advanced',
+    },
+    {
+      title: 'SAP S/4HANA & CDS Views Blueprint',
+      description: '15-question test evaluating Core Data Services (CDS), AMDP, New Open SQL, and HANA optimizations.',
+      category: 'SAP HANA',
+      total_questions: 15,
+      duration_minutes: 45,
+      passing_marks: 8,
+      max_marks: 15,
+      difficulty: 'Advanced',
+    },
+    {
+      title: 'Campus Fresher Technical Assessment',
+      description: '10-question evaluation covering programming fundamentals, logic, SQL basics, and data structures.',
+      category: 'Campus Hiring',
+      total_questions: 10,
+      duration_minutes: 25,
+      passing_marks: 4,
+      max_marks: 10,
+      difficulty: 'Beginner',
+    },
+    {
+      title: 'SAP Fiori & OData Technical Exam',
+      description: '15-question test covering SAP Gateway (SEGW), OData services, SAPUI5 basics, and Fiori Elements.',
+      category: 'SAP Fiori',
+      total_questions: 15,
+      duration_minutes: 45,
+      passing_marks: 8,
+      max_marks: 15,
+      difficulty: 'Intermediate',
+    },
+  ];
+
+  initialTemplates.forEach((t) => {
+    insertTpl.run(
+      t.title,
+      t.description,
+      t.category,
+      t.total_questions,
+      t.duration_minutes,
+      t.passing_marks,
+      t.max_marks,
+      t.difficulty,
+      JSON.stringify({}),
+      now,
+      now
+    );
   });
 }
 
@@ -379,14 +519,19 @@ export function getAdminResults(params: AdminQueryParams) {
 }
 
 export function getAllResultsForExport(params: Omit<AdminQueryParams, 'page' | 'limit'>) {
-  const { search, trainerFilter, campusFilter, scoreFilter, percentageFilter, dateFilter, sortBy, sortOrder } = params;
+  const { search, trainerFilter, campusFilter, paperFilter, scoreFilter, percentageFilter, dateFilter, sortBy, sortOrder } = params;
   const conditions: string[] = [];
   const queryParams: any[] = [];
 
   if (search && search.trim() !== '') {
     const term = `%${search.trim().toLowerCase()}%`;
-    conditions.push(`(LOWER(candidate_name) LIKE ? OR LOWER(candidate_email) LIKE ? OR LOWER(campus_name) LIKE ? OR LOWER(trainer_name) LIKE ?)`);
-    queryParams.push(term, term, term, term);
+    conditions.push(`(LOWER(candidate_name) LIKE ? OR LOWER(candidate_email) LIKE ? OR LOWER(campus_name) LIKE ? OR LOWER(trainer_name) LIKE ? OR LOWER(question_paper_title) LIKE ?)`);
+    queryParams.push(term, term, term, term, term);
+  }
+
+  if (paperFilter && paperFilter !== 'all') {
+    conditions.push(`question_paper_id = ?`);
+    queryParams.push(parseInt(paperFilter, 10));
   }
 
   if (trainerFilter && trainerFilter !== 'all') {
@@ -517,10 +662,13 @@ export function getAdminDashboardStats(trainerFilter?: string, campusFilter?: st
 }
 
 export function getTrainerBreakdown() {
-  const trainers = ['APPALARAJU', 'NOOKARAJU', 'DAKSHAYINI', 'NANI'];
+  const dbTrainers = (db.prepare(`SELECT display_name FROM trainers`).all() as { display_name: string }[]).map(t => t.display_name.toUpperCase());
+  const distinctResultsTrainers = (db.prepare(`SELECT DISTINCT UPPER(trainer_name) as trainer_name FROM assessment_results WHERE trainer_name IS NOT NULL AND trainer_name != ''`).all() as { trainer_name: string }[]).map(r => r.trainer_name);
+  const trainerSet = Array.from(new Set([...dbTrainers, ...distinctResultsTrainers])).filter(Boolean);
+
   const results: Record<string, { total: number; avgScore: number; passed: number }> = {};
 
-  trainers.forEach((t) => {
+  trainerSet.forEach((t) => {
     const stmt = db.prepare(`
       SELECT 
         COUNT(*) as total,
@@ -541,10 +689,13 @@ export function getTrainerBreakdown() {
 }
 
 export function getCampusBreakdown() {
-  const campuses = ['CITY', 'CIET'];
+  const dbCampuses = (db.prepare(`SELECT name FROM campuses`).all() as { name: string }[]).map(c => c.name.toUpperCase());
+  const distinctResultsCampuses = (db.prepare(`SELECT DISTINCT UPPER(campus_name) as campus_name FROM assessment_results WHERE campus_name IS NOT NULL AND campus_name != ''`).all() as { campus_name: string }[]).map(r => r.campus_name);
+  const campusSet = Array.from(new Set([...dbCampuses, ...distinctResultsCampuses])).filter(Boolean);
+
   const results: Record<string, { total: number; avgScore: number; passed: number }> = {};
 
-  campuses.forEach((c) => {
+  campusSet.forEach((c) => {
     const stmt = db.prepare(`
       SELECT 
         COUNT(*) as total,
@@ -630,6 +781,73 @@ export function deleteTrainer(usernameOrId: string | number): boolean {
   }
   const res = stmt.run(typeof usernameOrId === 'number' ? usernameOrId : usernameOrId.toLowerCase().trim());
   return res.changes > 0;
+}
+
+// ----------------------------------------------------
+// CAMPUSES & PORTAL SETTINGS DB API
+// ----------------------------------------------------
+
+export interface CampusRecord {
+  id: number;
+  name: string;
+  created_at: string;
+}
+
+export function getAllCampuses(): CampusRecord[] {
+  const stmt = db.prepare(`SELECT * FROM campuses ORDER BY name ASC`);
+  return stmt.all() as CampusRecord[];
+}
+
+export function createCampus(name: string): CampusRecord {
+  const cleanName = name.trim().toUpperCase();
+  const now = new Date().toISOString();
+  const existing = db.prepare(`SELECT * FROM campuses WHERE UPPER(name) = ?`).get(cleanName) as CampusRecord | undefined;
+  if (existing) return existing;
+
+  const stmt = db.prepare(`INSERT INTO campuses (name, created_at) VALUES (?, ?)`);
+  const res = stmt.run(cleanName, now);
+  return { id: Number(res.lastInsertRowid), name: cleanName, created_at: now };
+}
+
+export function deleteCampus(idOrName: number | string): boolean {
+  if (typeof idOrName === 'number') {
+    const res = db.prepare(`DELETE FROM campuses WHERE id = ?`).run(idOrName);
+    return res.changes > 0;
+  }
+  const str = String(idOrName).trim();
+  const num = Number(str);
+  if (!isNaN(num) && num > 0) {
+    const res = db.prepare(`DELETE FROM campuses WHERE id = ?`).run(num);
+    if (res.changes > 0) return true;
+  }
+  const res = db.prepare(`DELETE FROM campuses WHERE UPPER(name) = UPPER(?)`).run(str);
+  return res.changes > 0;
+}
+
+export function getPortalSettings(): Record<string, string> {
+  const rows = db.prepare(`SELECT key, value FROM portal_settings`).all() as { key: string; value: string }[];
+  const settings: Record<string, string> = {
+    portal_title: 'SAP Learning Portal',
+    portal_subtitle: 'Enterprise Skill Assessment System',
+    portal_assessment_name: 'SAP ABAP Assessment',
+    portal_instructions: 'Enter your details to begin the assessment.',
+    portal_logo_url: '/logo.png',
+  };
+  rows.forEach((r) => {
+    settings[r.key] = r.value;
+  });
+  return settings;
+}
+
+export function updatePortalSettings(settings: Record<string, string>): boolean {
+  const stmt = db.prepare(`INSERT INTO portal_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`);
+  const updateMany = db.transaction((entries: [string, string][]) => {
+    for (const [k, v] of entries) {
+      stmt.run(k, String(v));
+    }
+  });
+  updateMany(Object.entries(settings));
+  return true;
 }
 
 // ----------------------------------------------------
@@ -735,7 +953,15 @@ export function createQuestionPaper(data: {
     now
   );
 
-  return getQuestionPaperById(res.lastInsertRowid as number)!;
+  const newId = res.lastInsertRowid as number;
+  logQuestionPaperHistory(
+    newId,
+    'created',
+    `Question Paper "${data.title.trim()}" created in ${data.status || 'Draft'} mode (${data.duration_minutes || 30} mins, Pass mark: ${data.passing_marks || 5})`,
+    'Admin'
+  );
+
+  return getQuestionPaperById(newId)!;
 }
 
 export function updateQuestionPaper(id: number, data: Partial<QuestionPaperRecord>): boolean {
@@ -766,7 +992,18 @@ export function updateQuestionPaper(id: number, data: Partial<QuestionPaperRecor
     id
   );
 
-  return res.changes > 0;
+  if (res.changes > 0) {
+    if (data.status && data.status !== existing.status) {
+      logQuestionPaperHistory(id, 'status_changed', `Status updated from "${existing.status}" to "${data.status}"`, 'Admin');
+    } else if (data.title && data.title !== existing.title) {
+      logQuestionPaperHistory(id, 'title_updated', `Title renamed from "${existing.title}" to "${data.title}"`, 'Admin');
+    } else {
+      logQuestionPaperHistory(id, 'updated', `Paper configuration updated (${questions.length} questions, Max: ${max_marks} marks)`, 'Admin');
+    }
+    return true;
+  }
+
+  return false;
 }
 
 export function deleteQuestionPaper(id: number): boolean {
@@ -812,6 +1049,13 @@ export function saveQuestionForPaper(question: Omit<QuestionRecord, 'id' | 'crea
 
     // Update max_marks
     updateQuestionPaper(question.question_paper_id, {});
+    logQuestionPaperHistory(
+      question.question_paper_id,
+      'question_updated',
+      `Updated Question #${question.id}: "${question.question_text.substring(0, 40)}..."`,
+      'Admin'
+    );
+
     const fetchStmt = db.prepare(`SELECT * FROM questions WHERE id = ?`);
     return fetchStmt.get(question.id) as QuestionRecord;
   } else {
@@ -835,6 +1079,13 @@ export function saveQuestionForPaper(question: Omit<QuestionRecord, 'id' | 'crea
     );
 
     updateQuestionPaper(question.question_paper_id, {});
+    logQuestionPaperHistory(
+      question.question_paper_id,
+      'question_added',
+      `Added new Question: "${question.question_text.substring(0, 40)}..." (${question.marks || 1} mark)`,
+      'Admin'
+    );
+
     const fetchStmt = db.prepare(`SELECT * FROM questions WHERE id = ?`);
     return fetchStmt.get(res.lastInsertRowid) as QuestionRecord;
   }
@@ -845,6 +1096,7 @@ export function deleteQuestion(questionId: number, paperId: number): boolean {
   const res = stmt.run(questionId, paperId);
   if (res.changes > 0) {
     updateQuestionPaper(paperId, {});
+    logQuestionPaperHistory(paperId, 'question_deleted', `Deleted Question ID #${questionId}`, 'Admin');
     return true;
   }
   return false;
@@ -858,7 +1110,261 @@ export function reorderQuestions(paperId: number, questionIdsInOrder: number[]):
     });
   });
   updateMany(questionIdsInOrder);
+  logQuestionPaperHistory(paperId, 'questions_reordered', `Reordered ${questionIdsInOrder.length} questions`, 'Admin');
   return true;
+}
+
+export function logQuestionPaperHistory(
+  paperId: number,
+  action: string,
+  details: string = '',
+  performedBy: string = 'Admin'
+): boolean {
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO question_paper_history (question_paper_id, action, details, performed_by, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(paperId, action, details, performedBy, new Date().toISOString());
+    return true;
+  } catch (err) {
+    console.error('Failed to log question paper history', err);
+    return false;
+  }
+}
+
+export function getQuestionPaperHistory(paperId: number): QuestionPaperHistoryRecord[] {
+  const stmt = db.prepare(`
+    SELECT * FROM question_paper_history
+    WHERE question_paper_id = ?
+    ORDER BY created_at DESC, id DESC
+  `);
+  return stmt.all(paperId) as QuestionPaperHistoryRecord[];
+}
+
+export function getQuestionPaperAttempts(paperId: number): AssessmentRecord[] {
+  const stmt = db.prepare(`
+    SELECT * FROM assessment_results
+    WHERE question_paper_id = ?
+    ORDER BY submitted_at DESC
+  `);
+  return stmt.all(paperId) as AssessmentRecord[];
+}
+
+export interface QuestionPaperHistoryRecord {
+  id: number;
+  question_paper_id: number;
+  action: string;
+  details: string;
+  performed_by: string;
+  created_at: string;
+}
+
+export interface ExamTemplateRecord {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  total_questions: number;
+  duration_minutes: number;
+  passing_marks: number;
+  max_marks: number;
+  difficulty: string;
+  config_json: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function getAllExamTemplates(): ExamTemplateRecord[] {
+  const stmt = db.prepare(`SELECT * FROM exam_templates ORDER BY id ASC`);
+  return stmt.all() as ExamTemplateRecord[];
+}
+
+export function getExamTemplateById(id: number): ExamTemplateRecord | undefined {
+  const stmt = db.prepare(`SELECT * FROM exam_templates WHERE id = ?`);
+  return stmt.get(id) as ExamTemplateRecord | undefined;
+}
+
+export function createExamTemplate(data: {
+  title: string;
+  description?: string;
+  category?: string;
+  total_questions?: number;
+  duration_minutes?: number;
+  passing_marks?: number;
+  max_marks?: number;
+  difficulty?: string;
+  config_json?: string;
+}): ExamTemplateRecord {
+  const now = new Date().toISOString();
+  const stmt = db.prepare(`
+    INSERT INTO exam_templates (title, description, category, total_questions, duration_minutes, passing_marks, max_marks, difficulty, config_json, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const res = stmt.run(
+    data.title.trim(),
+    data.description || '',
+    data.category || 'SAP ABAP',
+    data.total_questions || 10,
+    data.duration_minutes || 30,
+    data.passing_marks || 5,
+    data.max_marks || 10,
+    data.difficulty || 'Intermediate',
+    data.config_json || '{}',
+    now,
+    now
+  );
+
+  return getExamTemplateById(res.lastInsertRowid as number)!;
+}
+
+export function updateExamTemplate(id: number, data: Partial<ExamTemplateRecord>): boolean {
+  const existing = getExamTemplateById(id);
+  if (!existing) return false;
+
+  const now = new Date().toISOString();
+  const stmt = db.prepare(`
+    UPDATE exam_templates
+    SET title = ?, description = ?, category = ?, total_questions = ?, duration_minutes = ?, passing_marks = ?, max_marks = ?, difficulty = ?, config_json = ?, updated_at = ?
+    WHERE id = ?
+  `);
+
+  const res = stmt.run(
+    data.title !== undefined ? data.title.trim() : existing.title,
+    data.description !== undefined ? data.description : existing.description,
+    data.category !== undefined ? data.category : existing.category,
+    data.total_questions !== undefined ? data.total_questions : existing.total_questions,
+    data.duration_minutes !== undefined ? data.duration_minutes : existing.duration_minutes,
+    data.passing_marks !== undefined ? data.passing_marks : existing.passing_marks,
+    data.max_marks !== undefined ? data.max_marks : existing.max_marks,
+    data.difficulty !== undefined ? data.difficulty : existing.difficulty,
+    data.config_json !== undefined ? data.config_json : existing.config_json,
+    now,
+    id
+  );
+
+  return res.changes > 0;
+}
+
+export function deleteExamTemplate(id: number): boolean {
+  const stmt = db.prepare(`DELETE FROM exam_templates WHERE id = ?`);
+  const res = stmt.run(id);
+  return res.changes > 0;
+}
+
+export function duplicateQuestionPaper(sourcePaperId: number, newTitle?: string): QuestionPaperRecord | null {
+  const sourcePaper = getQuestionPaperById(sourcePaperId);
+  if (!sourcePaper) return null;
+
+  const sourceQuestions = getQuestionsByPaperId(sourcePaperId);
+  const now = new Date().toISOString();
+
+  const title = newTitle || `${sourcePaper.title} (Copy)`;
+  const createdPaper = createQuestionPaper({
+    title,
+    description: sourcePaper.description,
+    category: sourcePaper.category,
+    duration_minutes: sourcePaper.duration_minutes,
+    passing_marks: sourcePaper.passing_marks,
+    status: 'Draft',
+  });
+
+  const insertQ = db.prepare(`
+    INSERT INTO questions (question_paper_id, question_text, question_type, option_a, option_b, option_c, option_d, correct_answer, marks, explanation, question_order, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  sourceQuestions.forEach((q, idx) => {
+    insertQ.run(
+      createdPaper.id,
+      q.question_text,
+      q.question_type,
+      q.option_a,
+      q.option_b,
+      q.option_c,
+      q.option_d,
+      q.correct_answer,
+      q.marks,
+      q.explanation,
+      idx + 1,
+      now
+    );
+  });
+
+  updateQuestionPaper(createdPaper.id, {});
+  logQuestionPaperHistory(
+    createdPaper.id,
+    'cloned_from_paper',
+    `Cloned from existing question paper "${sourcePaper.title}" (ID: #${sourcePaper.id}) with ${sourceQuestions.length} questions.`,
+    'Admin'
+  );
+
+  return getQuestionPaperById(createdPaper.id) || null;
+}
+
+export function createQuestionPaperFromTemplate(
+  templateId: number,
+  overrides?: {
+    title?: string;
+    description?: string;
+    category?: string;
+    duration_minutes?: number;
+    passing_marks?: number;
+    status?: 'Draft' | 'Published' | 'Unpublished' | 'Archived';
+  }
+): QuestionPaperRecord | null {
+  const template = getExamTemplateById(templateId);
+  if (!template) return null;
+
+  const now = new Date().toISOString();
+  const title = overrides?.title || `${template.title} - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+  const createdPaper = createQuestionPaper({
+    title,
+    description: overrides?.description || template.description,
+    category: overrides?.category || template.category,
+    duration_minutes: overrides?.duration_minutes || template.duration_minutes,
+    passing_marks: overrides?.passing_marks || template.passing_marks,
+    status: overrides?.status || 'Draft',
+  });
+
+  // Pull questions from questions table or seed pool based on category
+  const bankQuestions = db.prepare(`SELECT * FROM questions ORDER BY RANDOM() LIMIT ?`).all(template.total_questions) as QuestionRecord[];
+  
+  const insertQ = db.prepare(`
+    INSERT INTO questions (question_paper_id, question_text, question_type, option_a, option_b, option_c, option_d, correct_answer, marks, explanation, question_order, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  if (bankQuestions.length > 0) {
+    bankQuestions.forEach((q, idx) => {
+      insertQ.run(
+        createdPaper.id,
+        q.question_text,
+        q.question_type,
+        q.option_a,
+        q.option_b,
+        q.option_c,
+        q.option_d,
+        q.correct_answer,
+        q.marks,
+        q.explanation,
+        idx + 1,
+        now
+      );
+    });
+  }
+
+  updateQuestionPaper(createdPaper.id, {});
+  logQuestionPaperHistory(
+    createdPaper.id,
+    'cloned_from_template',
+    `Instantiated from Exam Template "${template.title}" (Template ID: #${template.id}) with ${bankQuestions.length} pre-configured questions.`,
+    'Admin'
+  );
+
+  return getQuestionPaperById(createdPaper.id) || null;
 }
 
 export default db;

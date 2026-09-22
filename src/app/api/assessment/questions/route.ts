@@ -3,15 +3,19 @@ import { getQuestionPaperByPublicToken, getQuestionsByPaperId } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const token = searchParams.get('token');
+  let token = searchParams.get('token');
 
   if (!token) {
-    return NextResponse.json({ error: 'Exam token required' }, { status: 400 });
+    token = 'sap-abap-assessment-01';
   }
 
-  const paper = getQuestionPaperByPublicToken(token);
+  let paper = getQuestionPaperByPublicToken(token);
   if (!paper) {
-    return NextResponse.json({ error: 'Invalid exam link' }, { status: 404 });
+    // If not found by token, try paper id 1 or first published
+    paper = getQuestionPaperByPublicToken('sap-abap-assessment-01');
+  }
+  if (!paper) {
+    return NextResponse.json({ error: 'Assessment paper not found' }, { status: 404 });
   }
 
   if (paper.status !== 'Published') {
