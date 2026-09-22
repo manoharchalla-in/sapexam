@@ -6,13 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FileCode,
-  Database,
-  Layers,
   Activity,
   BarChart3,
   UserCheck,
-  Filter,
-  Award,
   LogOut,
   Menu,
   X,
@@ -41,7 +37,6 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
   const navItems = [
     { label: 'Dashboard & Overview', href: '/admin', icon: LayoutDashboard },
     { label: 'Folders', href: '/admin/folders', icon: FolderTree },
-    { label: 'Assessment Results', href: '/admin/results', icon: Award },
     { label: 'Trainer Panels & Credentials', href: '/admin/trainers', icon: UserCheck },
     { label: 'Question Papers (Q&P)', href: '/admin/qp', icon: FileCode },
     { label: 'Live Monitoring', href: '/admin/live', icon: Activity },
