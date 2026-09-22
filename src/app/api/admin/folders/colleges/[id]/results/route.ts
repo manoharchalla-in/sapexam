@@ -31,9 +31,31 @@ export async function GET(
       status,
     });
 
-    const exams = getExamsByCollegeId(collegeId);
+    const allCollegeResults = getResultsByCollegeId(collegeId, { examId: 'all' });
+    const rawExams = getExamsByCollegeId(collegeId);
 
-    // Calculate Summary Stats
+    const exams = rawExams.map((ex) => {
+      const exResults = allCollegeResults.filter((r) => r.exam_id === ex.id);
+      const subCount = exResults.length;
+      const passCount = exResults.filter((r) => r.result_status === 'PASS').length;
+      const failCount = exResults.filter((r) => r.result_status === 'FAIL').length;
+      const rate = subCount > 0 ? Math.round((passCount / subCount) * 100) : 0;
+      const avg =
+        subCount > 0
+          ? Math.round(exResults.reduce((acc, r) => acc + (r.obtained_marks || 0), 0) / subCount)
+          : 0;
+
+      return {
+        ...ex,
+        total_submissions: subCount,
+        passed_count: passCount,
+        failed_count: failCount,
+        pass_rate: rate,
+        avg_score: avg,
+      };
+    });
+
+    // Calculate Summary Stats for current query
     const totalSubmissions = results.length;
     const passedCount = results.filter((r) => r.result_status === 'PASS').length;
     const failedCount = results.filter((r) => r.result_status === 'FAIL').length;
