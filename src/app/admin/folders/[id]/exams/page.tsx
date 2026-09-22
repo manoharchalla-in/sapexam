@@ -25,8 +25,6 @@ import {
   LayoutGrid,
   List,
   Database,
-  Layers,
-  Sparkles,
   Search,
   BookOpen,
   Filter,
@@ -77,18 +75,6 @@ interface BankQuestion {
   explanation: string;
 }
 
-interface ExamTemplate {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  total_questions: number;
-  duration_minutes: number;
-  passing_marks: number;
-  max_marks: number;
-  difficulty: string;
-}
-
 export default function ExamsAndQuestionPapersFolderPage() {
   const params = useParams();
   const router = useRouter();
@@ -97,9 +83,8 @@ export default function ExamsAndQuestionPapersFolderPage() {
   const [college, setCollege] = useState<College | null>(null);
   const [exams, setExams] = useState<CollegeExam[]>([]);
   const [bankQuestions, setBankQuestions] = useState<BankQuestion[]>([]);
-  const [templates, setTemplates] = useState<ExamTemplate[]>([]);
 
-  const [folderSubView, setFolderSubView] = useState<'qp' | 'bank' | 'templates'>('qp');
+  const [folderSubView, setFolderSubView] = useState<'qp' | 'bank'>('qp');
   const [viewMode, setViewMode] = useState<'icons' | 'cards'>('icons');
   const [loading, setLoading] = useState(true);
 
@@ -110,8 +95,7 @@ export default function ExamsAndQuestionPapersFolderPage() {
 
   // Modals
   const [isNewExamOpen, setIsNewExamOpen] = useState(false);
-  const [creationSource, setCreationSource] = useState<'template' | 'bank' | 'blank'>('template');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [creationSource, setCreationSource] = useState<'bank' | 'blank'>('blank');
 
   const [examForm, setExamForm] = useState({
     name: '',
@@ -124,7 +108,6 @@ export default function ExamsAndQuestionPapersFolderPage() {
     passing_marks: 5,
     instructions: 'Answer all questions within the allocated time. Multiple attempts are not allowed.',
     status: 'Published' as 'Draft' | 'Published',
-    templateId: undefined as number | undefined,
     questionBankIds: [] as number[],
   });
   const [creating, setCreating] = useState(false);
@@ -152,13 +135,6 @@ export default function ExamsAndQuestionPapersFolderPage() {
       if (bankData.questions) {
         setBankQuestions(bankData.questions || []);
       }
-
-      // Fetch Exam Templates
-      const tplRes = await fetch(`/api/admin/templates`);
-      const tplData = await tplRes.json();
-      if (tplData.templates) {
-        setTemplates(tplData.templates || []);
-      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -169,26 +145,6 @@ export default function ExamsAndQuestionPapersFolderPage() {
   useEffect(() => {
     if (collegeId) fetchAllData();
   }, [collegeId]);
-
-  const openCreateModalWithTemplate = (tpl: ExamTemplate) => {
-    setSelectedTemplateId(tpl.id);
-    setCreationSource('template');
-    setExamForm({
-      name: `${tpl.title} - ${college?.name || 'Assessment'}`,
-      code: `EXAM-${Math.floor(1000 + Math.random() * 9000)}`,
-      subject: tpl.category || 'SAP ABAP Programming',
-      description: tpl.description || '',
-      duration_minutes: tpl.duration_minutes || 30,
-      total_questions: tpl.total_questions || 10,
-      total_marks: tpl.max_marks || 10,
-      passing_marks: tpl.passing_marks || 5,
-      instructions: 'Answer all questions. Multiple attempts are not permitted.',
-      status: 'Published',
-      templateId: tpl.id,
-      questionBankIds: [],
-    });
-    setIsNewExamOpen(true);
-  };
 
   const openCreateModalWithSelectedBank = () => {
     if (selectedBankIds.length === 0) {
@@ -207,7 +163,6 @@ export default function ExamsAndQuestionPapersFolderPage() {
       passing_marks: Math.ceil(selectedBankIds.length * 0.4),
       instructions: 'Answer all questions within the allocated time.',
       status: 'Published',
-      templateId: undefined,
       questionBankIds: selectedBankIds,
     });
     setIsNewExamOpen(true);
@@ -236,9 +191,7 @@ export default function ExamsAndQuestionPapersFolderPage() {
         status: examForm.status,
       };
 
-      if (creationSource === 'template' && examForm.templateId) {
-        payload.templateId = examForm.templateId;
-      } else if (creationSource === 'bank' && examForm.questionBankIds.length > 0) {
+      if (creationSource === 'bank' && examForm.questionBankIds.length > 0) {
         payload.questionBankIds = examForm.questionBankIds;
       }
 
@@ -344,7 +297,7 @@ export default function ExamsAndQuestionPapersFolderPage() {
           <div className="flex items-center space-x-2.5">
             <button
               onClick={() => {
-                setCreationSource('template');
+                setCreationSource('blank');
                 setExamForm({
                   name: `SAP Technical Exam - ${college?.name || 'Assessment'}`,
                   code: `EX-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -356,7 +309,6 @@ export default function ExamsAndQuestionPapersFolderPage() {
                   passing_marks: 5,
                   instructions: 'Answer all questions. Multiple attempts are not allowed.',
                   status: 'Published',
-                  templateId: templates[0]?.id,
                   questionBankIds: [],
                 });
                 setIsNewExamOpen(true);
@@ -399,7 +351,7 @@ export default function ExamsAndQuestionPapersFolderPage() {
             <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl">
               <button
                 onClick={() => setFolderSubView('qp')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${
                   folderSubView === 'qp' ? 'bg-white text-indigo-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -408,18 +360,8 @@ export default function ExamsAndQuestionPapersFolderPage() {
               </button>
 
               <button
-                onClick={() => setFolderSubView('templates')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${
-                  folderSubView === 'templates' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5 text-blue-600" />
-                <span>Exam Templates ({templates.length})</span>
-              </button>
-
-              <button
                 onClick={() => setFolderSubView('bank')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center space-x-1.5 ${
                   folderSubView === 'bank' ? 'bg-white text-amber-700 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -476,11 +418,11 @@ export default function ExamsAndQuestionPapersFolderPage() {
                   </div>
                   <h3 className="text-base font-black text-slate-900">No Exam Papers Created</h3>
                   <p className="text-xs text-slate-500 font-medium">
-                    Create a new exam paper from ready-made <strong>Exam Templates</strong> or build one from the <strong>Question Bank</strong>.
+                    Create a custom exam paper or build one directly from the <strong>Question Bank</strong>.
                   </p>
                   <button
                     onClick={() => {
-                      setCreationSource('template');
+                      setCreationSource('blank');
                       setIsNewExamOpen(true);
                     }}
                     className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl inline-flex items-center space-x-2"
@@ -618,77 +560,7 @@ export default function ExamsAndQuestionPapersFolderPage() {
           )}
 
           {/* ========================================================= */}
-          {/* VIEW 2: EXAM TEMPLATES */}
-          {/* ========================================================= */}
-          {folderSubView === 'templates' && (
-            <div className="space-y-6 animate-in fade-in">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
-                    <Layers className="w-5 h-5 text-blue-600" />
-                    <span>Curated Exam Templates</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Pre-configured blueprints with pre-filled duration, marks, and auto-populated question banks.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {templates.map((tpl) => (
-                  <div
-                    key={tpl.id}
-                    className="glossy-card rounded-3xl p-6 border border-slate-200/90 flex flex-col justify-between space-y-4 hover:border-blue-400 hover:shadow-md transition-all group"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-0.5 rounded-full text-2xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
-                          {tpl.category}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">
-                          {tpl.difficulty}
-                        </span>
-                      </div>
-
-                      <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
-                        {tpl.title}
-                      </h4>
-
-                      <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                        {tpl.description}
-                      </p>
-
-                      <div className="grid grid-cols-3 gap-2 py-2 bg-slate-50/80 rounded-xl p-2.5 text-center text-xs border border-slate-200/60">
-                        <div>
-                          <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Questions</span>
-                          <span className="font-black text-slate-900">{tpl.total_questions} Qs</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Duration</span>
-                          <span className="font-black text-indigo-600">{tpl.duration_minutes} Mins</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-extrabold text-slate-400 uppercase block">Pass Marks</span>
-                          <span className="font-black text-emerald-600">{tpl.passing_marks}/{tpl.max_marks}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => openCreateModalWithTemplate(tpl)}
-                      className="glossy-button-primary text-white text-xs font-black w-full py-2.5 rounded-xl flex items-center justify-center space-x-2 shadow-xs"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Generate Exam from Template</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ========================================================= */}
-          {/* VIEW 3: QUESTION BANK REPOSITORY */}
+          {/* VIEW 2: QUESTION BANK REPOSITORY */}
           {/* ========================================================= */}
           {folderSubView === 'bank' && (
             <div className="space-y-6 animate-in fade-in">
@@ -859,27 +731,25 @@ export default function ExamsAndQuestionPapersFolderPage() {
             <div className="p-3 bg-slate-100 border-b border-slate-200/80 flex items-center justify-center space-x-2 shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  setCreationSource('template');
-                  if (templates[0]) openCreateModalWithTemplate(templates[0]);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1.5 transition-all ${
-                  creationSource === 'template' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5 text-blue-600" />
-                <span>From Template</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setCreationSource('blank')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1.5 transition-all ${
-                  creationSource === 'blank' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600'
+                className={`px-4 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1.5 transition-all ${
+                  creationSource === 'blank' ? 'bg-white text-indigo-700 shadow-2xs' : 'text-slate-600'
                 }`}
               >
                 <FileCode className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Custom Blank Paper</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFolderSubView('bank');
+                  setIsNewExamOpen(false);
+                }}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1.5 transition-all text-slate-600 hover:text-amber-700`}
+              >
+                <Database className="w-3.5 h-3.5 text-amber-600" />
+                <span>Select from Question Bank →</span>
               </button>
             </div>
 
@@ -891,26 +761,10 @@ export default function ExamsAndQuestionPapersFolderPage() {
                 </div>
               )}
 
-              {creationSource === 'template' && (
-                <div>
-                  <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                    Select Base Exam Template <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={examForm.templateId || ''}
-                    onChange={(e) => {
-                      const tId = parseInt(e.target.value, 10);
-                      const found = templates.find((t) => t.id === tId);
-                      if (found) openCreateModalWithTemplate(found);
-                    }}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold glossy-input text-blue-700 bg-blue-50/40"
-                  >
-                    {templates.map((tpl) => (
-                      <option key={tpl.id} value={tpl.id}>
-                        {tpl.title} ({tpl.duration_minutes} Mins, {tpl.total_questions} Questions)
-                      </option>
-                    ))}
-                  </select>
+              {creationSource === 'bank' && examForm.questionBankIds.length > 0 && (
+                <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold flex items-center space-x-2">
+                  <Database className="w-4 h-4 text-indigo-600 shrink-0" />
+                  <span>{examForm.questionBankIds.length} questions from Question Bank will be imported.</span>
                 </div>
               )}
 

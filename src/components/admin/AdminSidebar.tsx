@@ -45,7 +45,6 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
     { label: 'Trainer Panels & Credentials', href: '/admin/trainers', icon: UserCheck },
     { label: 'Question Papers (Q&P)', href: '/admin/qp', icon: FileCode },
     { label: 'Question Bank', href: '/admin/bank', icon: Database },
-    { label: 'Exam Templates', href: '/admin/templates', icon: Layers },
     { label: 'Live Monitoring', href: '/admin/live', icon: Activity },
     { label: 'Analytics & Pass Rates', href: '/admin/analytics', icon: BarChart3 },
     { label: 'Landing Page & Settings', href: '/admin/settings', icon: Settings },
