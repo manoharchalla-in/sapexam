@@ -385,7 +385,7 @@ export default function ExamsAndResultsFolderPage() {
                           <span>Exam Paper ({exam.question_count || 0} Questions)</span>
                         </div>
                         <Link
-                          href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=paper`}
+                          href={`/admin/folders/${collegeId}/exams/${exam.id}`}
                           className="text-2xs font-black text-blue-600 hover:text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg transition-colors"
                         >
                           Manage Questions →
@@ -398,10 +398,10 @@ export default function ExamsAndResultsFolderPage() {
                           <span>Results ({exam.attempt_count || 0} Submissions)</span>
                         </div>
                         <Link
-                          href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=results`}
+                          href={`/admin/folders/${collegeId}/results?examId=${exam.id}`}
                           className="text-2xs font-black text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg transition-colors"
                         >
-                          View Results →
+                          Open Results Folder →
                         </Link>
                       </div>
                     </div>

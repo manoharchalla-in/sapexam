@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import {
   Award,
@@ -67,7 +67,9 @@ interface AttemptResult {
 
 export default function CollegeResultsFolderPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const collegeId = params.id as string;
+  const initialExamId = searchParams.get('examId') || 'all';
 
   const [college, setCollege] = useState<College | null>(null);
   const [exams, setExams] = useState<ExamMeta[]>([]);
@@ -83,7 +85,7 @@ export default function CollegeResultsFolderPage() {
 
   // Filters
   const [search, setSearch] = useState('');
-  const [examFilter, setExamFilter] = useState('all');
+  const [examFilter, setExamFilter] = useState(initialExamId);
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Scorecard Modal
