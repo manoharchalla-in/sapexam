@@ -4,19 +4,16 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import ExplorerFolder from '@/components/common/ExplorerFolder';
 import {
   FileCheck2,
   PlusCircle,
   ArrowLeft,
-  ArrowRight,
-  Share2,
+  ChevronRight,
   Copy,
   Check,
   Edit2,
   Trash2,
-  Clock,
-  BookOpen,
-  Award,
   Users,
   Eye,
   FileCode,
@@ -25,8 +22,8 @@ import {
   Loader2,
   X,
   Building2,
-  Globe,
-  Sparkles,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 
 interface College {
@@ -67,6 +64,7 @@ export default function ExamsAndResultsFolderPage() {
   const [college, setCollege] = useState<College | null>(null);
   const [exams, setExams] = useState<CollegeExam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'icons' | 'cards'>('icons');
 
   // Modals
   const [isNewExamOpen, setIsNewExamOpen] = useState(false);
@@ -185,7 +183,7 @@ export default function ExamsAndResultsFolderPage() {
       <AdminSidebar currentRole="Main Super Admin" />
 
       <main className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        {/* Glossy Top Bar */}
+        {/* Top Header */}
         <header className="glossy-header px-6 py-4 sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80">
           <div className="flex items-center space-x-3">
             <Link
@@ -200,56 +198,74 @@ export default function ExamsAndResultsFolderPage() {
                 <span>/</span>
                 <Link href={`/admin/folders/${collegeId}`} className="hover:text-blue-600">{college?.name || 'College'}</Link>
                 <span>/</span>
-                <span className="text-indigo-600 font-extrabold">Exams & Results</span>
+                <span className="text-amber-600 font-extrabold">Exams & Results</span>
               </div>
               <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
-                <FileCheck2 className="w-5 h-5 text-indigo-600" />
-                <span>Exams & Results Folder</span>
+                <FileCheck2 className="w-5 h-5 text-amber-500" />
+                <span>Exams & Results</span>
               </h1>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsNewExamOpen(true)}
-            className="glossy-button-primary text-white text-xs font-black px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>+ New Exam</span>
-          </button>
+          <div className="flex items-center space-x-2.5">
+            <button
+              onClick={() => setIsNewExamOpen(true)}
+              className="glossy-button-primary text-white text-xs font-black px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ New Exam</span>
+            </button>
+          </div>
         </header>
 
         <div className="p-6 max-w-7xl w-full mx-auto space-y-6">
-          {/* Institutional Banner */}
-          <div className="glossy-panel p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-2xs font-bold uppercase text-slate-400">Institutional Exams</p>
-                <h2 className="text-sm font-black text-slate-900">{college?.name}</h2>
-              </div>
+          {/* Windows Explorer Style Address & View Bar */}
+          <div className="glossy-panel p-3 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex items-center space-x-2 bg-white/90 px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs">
+              <span className="text-amber-500">📁</span>
+              <Link href="/admin/folders" className="text-xs font-bold text-slate-600 hover:text-blue-600">Folders</Link>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <Link href={`/admin/folders/${collegeId}`} className="text-xs font-bold text-slate-600 hover:text-blue-600">{college?.name}</Link>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs font-black text-slate-900">Exams & Results</span>
             </div>
 
-            <div className="flex items-center space-x-2 text-2xs font-extrabold text-slate-600">
-              <span className="px-3 py-1 bg-white rounded-full border border-slate-200">
-                Total Assessments: <strong className="text-slate-900">{exams.length}</strong>
-              </span>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                <button
+                  onClick={() => setViewMode('icons')}
+                  className={`p-1.5 rounded-lg text-xs transition-all ${
+                    viewMode === 'icons' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                  title="Folder Icons View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-1.5 rounded-lg text-xs transition-all ${
+                    viewMode === 'cards' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                  title="Cards Details View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Exams Cards Grid */}
+          {/* Exams Folder Explorer View */}
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center space-y-3">
-              <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
               <p className="text-xs font-bold text-slate-500">Loading Assessments...</p>
             </div>
           ) : exams.length === 0 ? (
             <div className="glossy-card rounded-3xl p-12 text-center space-y-4 max-w-md mx-auto">
-              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto border border-indigo-100">
+              <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-100">
                 <FileCheck2 className="w-8 h-8" />
               </div>
-              <h3 className="text-base font-black text-slate-900">No Assessment Exams Created</h3>
+              <h3 className="text-base font-black text-slate-900">No Exams Created</h3>
               <p className="text-xs text-slate-500 font-medium">
                 Create a new exam to automatically generate the <strong>Exam Paper</strong> and <strong>Results</strong> folders.
               </p>
@@ -261,7 +277,32 @@ export default function ExamsAndResultsFolderPage() {
                 <span>+ Create First Exam</span>
               </button>
             </div>
+          ) : viewMode === 'icons' ? (
+            /* Authentic Folder Explorer Icons Grid */
+            <div className="glossy-card rounded-3xl p-8 border border-slate-200/90 shadow-sm space-y-4">
+              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Assessment Folders ({exams.length})
+                </h3>
+                <span className="text-2xs text-slate-400">Click folder to open Exam Paper & Results</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-items-center pt-2">
+                {exams.map((exam) => (
+                  <ExplorerFolder
+                    key={exam.id}
+                    name={exam.name}
+                    subLabel={exam.code || `${exam.duration_minutes} Mins`}
+                    badge={`${exam.question_count || 0} Qs • ${exam.attempt_count || 0} Submissions`}
+                    innerIcon={<FileCode className="w-4 h-4 text-amber-600" />}
+                    onClick={() => router.push(`/admin/folders/${collegeId}/exams/${exam.id}`)}
+                    onDelete={() => setDeleteTarget(exam)}
+                  />
+                ))}
+              </div>
+            </div>
           ) : (
+            /* Cards Details View */
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {exams.map((exam) => (
                 <div
@@ -269,7 +310,6 @@ export default function ExamsAndResultsFolderPage() {
                   className="glossy-card rounded-3xl p-6 border border-slate-200/90 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group space-y-5"
                 >
                   <div className="space-y-4">
-                    {/* Header with Title & Status */}
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center space-x-2">
@@ -289,7 +329,7 @@ export default function ExamsAndResultsFolderPage() {
                           )}
                         </div>
 
-                        <h3 className="text-base font-black text-slate-900 mt-1.5 group-hover:text-indigo-600 transition-colors">
+                        <h3 className="text-base font-black text-slate-900 mt-1.5 group-hover:text-blue-600 transition-colors">
                           {exam.name}
                         </h3>
                         <p className="text-xs text-slate-500 font-medium mt-0.5">{exam.subject}</p>
@@ -306,28 +346,11 @@ export default function ExamsAndResultsFolderPage() {
                       </div>
                     </div>
 
-                    {/* Key Metrics Strip */}
-                    <div className="grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-center">
-                      <div>
-                        <p className="text-2xs font-extrabold uppercase text-slate-400">Duration</p>
-                        <p className="text-xs font-black text-slate-800">{exam.duration_minutes} Mins</p>
-                      </div>
-                      <div>
-                        <p className="text-2xs font-extrabold uppercase text-slate-400">Questions</p>
-                        <p className="text-xs font-black text-slate-800">{exam.question_count || exam.total_questions}</p>
-                      </div>
-                      <div>
-                        <p className="text-2xs font-extrabold uppercase text-slate-400">Attempts</p>
-                        <p className="text-xs font-black text-indigo-700">{exam.attempt_count || 0}</p>
-                      </div>
-                    </div>
-
-                    {/* Auto-Created Subfolders (Exam Paper & Results) */}
                     <div className="space-y-2 pt-1">
                       <div className="p-3 bg-white/80 rounded-xl border border-slate-200/90 flex items-center justify-between">
                         <div className="flex items-center space-x-2.5 text-xs font-bold text-slate-800">
-                          <FileCode className="w-4 h-4 text-blue-600" />
-                          <span>📁 Exam Paper ({exam.question_count || 0} Questions)</span>
+                          <span className="text-base">📁</span>
+                          <span>Exam Paper ({exam.question_count || 0} Questions)</span>
                         </div>
                         <Link
                           href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=paper`}
@@ -339,8 +362,8 @@ export default function ExamsAndResultsFolderPage() {
 
                       <div className="p-3 bg-white/80 rounded-xl border border-slate-200/90 flex items-center justify-between">
                         <div className="flex items-center space-x-2.5 text-xs font-bold text-slate-800">
-                          <Award className="w-4 h-4 text-emerald-600" />
-                          <span>📁 Results ({exam.attempt_count || 0} Submissions)</span>
+                          <span className="text-base">📁</span>
+                          <span>Results ({exam.attempt_count || 0} Submissions)</span>
                         </div>
                         <Link
                           href={`/admin/folders/${collegeId}/exams/${exam.id}?tab=results`}
@@ -352,31 +375,29 @@ export default function ExamsAndResultsFolderPage() {
                     </div>
                   </div>
 
-                  {/* Bottom Share Link and Dashboard Link */}
-                  <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
                     <button
                       onClick={() => copyExamLink(exam.public_token)}
-                      className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 rounded-xl text-2xs font-black bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200/80"
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-2xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all border border-slate-200/80"
                     >
                       {copiedToken === exam.public_token ? (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-emerald-700 font-bold">Link Copied!</span>
+                          <span className="text-emerald-700">Link Copied</span>
                         </>
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Copy Exam Link</span>
+                          <span>Copy Link</span>
                         </>
                       )}
                     </button>
 
                     <Link
                       href={`/admin/folders/${collegeId}/exams/${exam.id}`}
-                      className="w-full sm:w-auto glossy-button-primary text-white text-xs font-black px-4 py-2 rounded-xl flex items-center justify-center space-x-1.5 shadow-sm"
+                      className="glossy-button-primary text-white text-xs font-black px-4 py-2 rounded-xl"
                     >
-                      <span>Open Exam Folder</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      Open Exam Folder →
                     </Link>
                   </div>
                 </div>
@@ -390,14 +411,12 @@ export default function ExamsAndResultsFolderPage() {
       {isNewExamOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-2xl glossy-card rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
-            <div className="p-5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex items-center justify-between shrink-0">
+            <div className="p-5 bg-gradient-to-r from-amber-500 to-amber-600 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-xl">
-                  <PlusCircle className="w-5 h-5 text-white" />
-                </div>
+                <span className="text-2xl">📁</span>
                 <div>
-                  <h3 className="text-base font-black">Create New Assessment Exam</h3>
-                  <p className="text-xs text-indigo-100">Automatically creates Exam Paper & Results folders</p>
+                  <h3 className="text-base font-black">New Assessment Exam Folder</h3>
+                  <p className="text-xs text-amber-100">Auto-generates Exam Paper & Results subfolders</p>
                 </div>
               </div>
               <button onClick={() => setIsNewExamOpen(false)} className="p-1 text-white/80 hover:text-white">
@@ -430,7 +449,7 @@ export default function ExamsAndResultsFolderPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                    Exam Code (Optional)
+                    Exam Code
                   </label>
                   <input
                     type="text"
@@ -458,7 +477,7 @@ export default function ExamsAndResultsFolderPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                    Duration (Minutes)
+                    Duration (Mins)
                   </label>
                   <input
                     type="number"
@@ -507,49 +526,6 @@ export default function ExamsAndResultsFolderPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                  Publish Status
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label
-                    onClick={() => setExamForm({ ...examForm, status: 'Published' })}
-                    className={`flex items-center p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                      examForm.status === 'Published'
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold'
-                        : 'bg-white border-slate-200 text-slate-600'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="status"
-                      checked={examForm.status === 'Published'}
-                      onChange={() => setExamForm({ ...examForm, status: 'Published' })}
-                      className="mr-2"
-                    />
-                    <span>Published (Ready to Share)</span>
-                  </label>
-
-                  <label
-                    onClick={() => setExamForm({ ...examForm, status: 'Draft' })}
-                    className={`flex items-center p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                      examForm.status === 'Draft'
-                        ? 'bg-amber-50 border-amber-500 text-amber-950 font-bold'
-                        : 'bg-white border-slate-200 text-slate-600'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="status"
-                      checked={examForm.status === 'Draft'}
-                      onChange={() => setExamForm({ ...examForm, status: 'Draft' })}
-                      className="mr-2"
-                    />
-                    <span>Draft (Not Accessible)</span>
-                  </label>
-                </div>
-              </div>
-
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
                 <button
                   type="button"
@@ -583,7 +559,6 @@ export default function ExamsAndResultsFolderPage() {
               <h3 className="text-base font-black text-slate-950">Delete Exam Folder?</h3>
               <p className="text-xs text-slate-500 mt-1">
                 Are you sure you want to permanently delete <strong>{deleteTarget.name}</strong>?
-                This will delete its question paper and candidate result records.
               </p>
             </div>
 

@@ -4,25 +4,26 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import ExplorerFolder from '@/components/common/ExplorerFolder';
 import {
   FolderTree,
-  Folder,
   FolderPlus,
   Search,
   Users,
   FileCheck2,
   Calendar,
-  MoreVertical,
   Edit2,
   Trash2,
   ArrowRight,
-  ExternalLink,
   ShieldCheck,
   Building2,
   X,
   AlertTriangle,
   Loader2,
   Sparkles,
+  LayoutGrid,
+  List,
+  ChevronRight,
 } from 'lucide-react';
 
 interface College {
@@ -42,6 +43,7 @@ export default function FoldersDashboardPage() {
   const [colleges, setColleges] = useState<College[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'icons' | 'list'>('icons');
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -185,7 +187,7 @@ export default function FoldersDashboardPage() {
               <span className="text-blue-600 font-extrabold">Folders Management</span>
             </div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2.5">
-              <FolderTree className="w-5 h-5 text-blue-600" />
+              <FolderTree className="w-5 h-5 text-amber-500" />
               <span>College Folders Hub</span>
             </h1>
           </div>
@@ -200,178 +202,171 @@ export default function FoldersDashboardPage() {
         </header>
 
         <div className="p-6 max-w-7xl w-full mx-auto space-y-6">
-          {/* Top Quick Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="glossy-card p-4 rounded-2xl flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                <Building2 className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xs font-bold text-slate-400 uppercase">College Folders</p>
-                <p className="text-2xl font-black text-slate-900">{colleges.length}</p>
-              </div>
+          {/* Windows Explorer Style Path & Action Bar */}
+          <div className="glossy-panel p-3 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-3">
+            {/* Address Bar */}
+            <div className="flex items-center space-x-2 w-full md:w-auto bg-white/90 px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs">
+              <span className="text-amber-500">📁</span>
+              <span className="text-xs font-black text-slate-800">Folders</span>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs text-slate-500 font-medium">{colleges.length} Colleges Total</span>
             </div>
 
-            <div className="glossy-card p-4 rounded-2xl flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-                <Users className="w-6 h-6" />
+            {/* Search & View Mode Switcher */}
+            <div className="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-end">
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search folders..."
+                  className="w-full pl-10 pr-4 py-1.5 text-xs font-bold text-slate-800 glossy-input rounded-xl"
+                />
               </div>
-              <div>
-                <p className="text-2xs font-bold text-slate-400 uppercase">Registered Students</p>
-                <p className="text-2xl font-black text-slate-900">{totalStudents}</p>
-              </div>
-            </div>
 
-            <div className="glossy-card p-4 rounded-2xl flex items-center space-x-4">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
-                <FileCheck2 className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-2xs font-bold text-slate-400 uppercase">Assessment Exams</p>
-                <p className="text-2xl font-black text-slate-900">{totalExams}</p>
+              <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 shrink-0">
+                <button
+                  onClick={() => setViewMode('icons')}
+                  className={`p-1.5 rounded-lg text-xs transition-all ${
+                    viewMode === 'icons' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                  title="Large Icons View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-lg text-xs transition-all ${
+                    viewMode === 'list' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                  title="List Details View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Search & Filter Bar */}
-          <div className="glossy-panel p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search colleges by name or folder ID..."
-                className="w-full pl-10 pr-4 py-2 text-xs font-bold text-slate-800 glossy-input rounded-xl"
-              />
-            </div>
-            <p className="text-xs font-bold text-slate-500">
-              Showing <span className="text-blue-600">{colleges.length}</span> college folder{colleges.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-
-          {/* College Folders Grid */}
+          {/* College Folders Explorer Grid */}
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center space-y-3">
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
               <p className="text-xs font-bold text-slate-500">Loading College Folders...</p>
             </div>
           ) : colleges.length === 0 ? (
             <div className="glossy-card rounded-3xl p-12 text-center space-y-4 max-w-md mx-auto">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto border border-blue-100">
+              <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-100">
                 <FolderTree className="w-8 h-8" />
               </div>
-              <h3 className="text-base font-black text-slate-900">No College Folders Found</h3>
+              <h3 className="text-base font-black text-slate-900">No College Folders</h3>
               <p className="text-xs text-slate-500 font-medium">
-                {search ? 'No college matches your search query.' : 'Get started by creating your first College Folder.'}
+                {search ? 'No folder matches your search.' : 'Create your first College Folder to begin organizing.'}
               </p>
               <button
                 onClick={() => setIsCreateOpen(true)}
                 className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl inline-flex items-center space-x-2"
               >
                 <FolderPlus className="w-4 h-4" />
-                <span>+ Create First College</span>
+                <span>+ Create Folder</span>
               </button>
             </div>
+          ) : viewMode === 'icons' ? (
+            /* Authentic Windows Explorer Folder Icons Grid */
+            <div className="glossy-card rounded-3xl p-8 border border-slate-200/90 shadow-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-items-center">
+                {colleges.map((col) => (
+                  <ExplorerFolder
+                    key={col.id}
+                    name={col.name}
+                    subLabel={col.code || col.folder_id}
+                    badge={`${col.student_count || 0} Students • ${col.exam_count || 0} Exams`}
+                    onClick={() => router.push(`/admin/folders/${col.id}`)}
+                    onRename={() => {
+                      setEditCollege(col);
+                      setEditName(col.name);
+                      setEditCode(col.code || '');
+                      setEditDesc(col.description || '');
+                    }}
+                    onDelete={() => setDeleteTarget(col)}
+                  />
+                ))}
+              </div>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {colleges.map((col) => (
-                <div
-                  key={col.id}
-                  className="glossy-card rounded-2xl p-5 hover:shadow-lg transition-all duration-200 border border-slate-200/90 flex flex-col justify-between group hover:border-blue-300"
-                >
-                  <div className="space-y-4">
-                    {/* Top folder title & action menu */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center space-x-3 min-w-0">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                          <Folder className="w-6 h-6 fill-white/20" />
-                        </div>
-                        <div className="min-w-0">
-                          <h2 className="text-sm font-black text-slate-950 truncate group-hover:text-blue-600 transition-colors">
-                            {col.name}
-                          </h2>
-                          <div className="flex items-center space-x-2 mt-0.5">
-                            <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
-                              {col.folder_id}
-                            </span>
-                            {col.code && (
-                              <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                                {col.code}
-                              </span>
-                            )}
+            /* Table List View */
+            <div className="glossy-card rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100/80 text-2xs uppercase tracking-wider font-black text-slate-500 border-b border-slate-200">
+                    <tr>
+                      <th className="py-3.5 px-5">Folder Name</th>
+                      <th className="py-3.5 px-4">Folder ID</th>
+                      <th className="py-3.5 px-4 text-center">Students</th>
+                      <th className="py-3.5 px-4 text-center">Exams</th>
+                      <th className="py-3.5 px-4">Created Date</th>
+                      <th className="py-3.5 px-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {colleges.map((col) => (
+                      <tr
+                        key={col.id}
+                        onClick={() => router.push(`/admin/folders/${col.id}`)}
+                        className="hover:bg-blue-50/50 cursor-pointer transition-colors"
+                      >
+                        <td className="py-3.5 px-5 flex items-center space-x-3">
+                          <span className="text-xl">📁</span>
+                          <div>
+                            <p className="font-black text-slate-900">{col.name}</p>
+                            {col.code && <p className="text-[10px] text-slate-400 font-bold">{col.code}</p>}
                           </div>
-                        </div>
-                      </div>
+                        </td>
 
-                      <div className="flex items-center space-x-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            setEditCollege(col);
-                            setEditName(col.name);
-                            setEditCode(col.code || '');
-                            setEditDesc(col.description || '');
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Rename / Edit"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(col)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="Delete Folder"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                        <td className="py-3.5 px-4 font-mono text-slate-600 font-bold text-2xs">
+                          {col.folder_id}
+                        </td>
 
-                    {col.description && (
-                      <p className="text-xs text-slate-500 line-clamp-2 font-medium">
-                        {col.description}
-                      </p>
-                    )}
+                        <td className="py-3.5 px-4 text-center font-bold text-emerald-700">
+                          {col.student_count || 0}
+                        </td>
 
-                    {/* Auto-created subfolders preview */}
-                    <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200/70 space-y-2">
-                      <div className="flex items-center justify-between text-2xs font-extrabold text-slate-700">
-                        <span className="flex items-center space-x-1.5">
-                          <Users className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>📁 Student Credential Data</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-black border border-emerald-100">
-                          {col.student_count || 0} Students
-                        </span>
-                      </div>
+                        <td className="py-3.5 px-4 text-center font-bold text-indigo-700">
+                          {col.exam_count || 0}
+                        </td>
 
-                      <div className="flex items-center justify-between text-2xs font-extrabold text-slate-700">
-                        <span className="flex items-center space-x-1.5">
-                          <FileCheck2 className="w-3.5 h-3.5 text-indigo-600" />
-                          <span>📁 Exams & Results</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-black border border-indigo-100">
-                          {col.exam_count || 0} Exams
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                        <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                          {new Date(col.created_at).toLocaleDateString()}
+                        </td>
 
-                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      Created {new Date(col.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </span>
-
-                    <Link
-                      href={`/admin/folders/${col.id}`}
-                      className="inline-flex items-center space-x-1.5 text-xs font-black text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100/80 px-3.5 py-1.5 rounded-xl transition-all"
-                    >
-                      <span>Open Folder</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                        <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="inline-flex items-center space-x-1">
+                            <button
+                              onClick={() => {
+                                setEditCollege(col);
+                                setEditName(col.name);
+                                setEditCode(col.code || '');
+                                setEditDesc(col.description || '');
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                              title="Rename"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(col)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -381,14 +376,12 @@ export default function FoldersDashboardPage() {
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-md glossy-card rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="p-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
+            <div className="p-6 bg-gradient-to-r from-amber-500 to-amber-600 text-white flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-xs">
-                  <FolderPlus className="w-5 h-5 text-white" />
-                </div>
+                <span className="text-2xl">📁</span>
                 <div>
-                  <h3 className="text-base font-black">Create College Folder</h3>
-                  <p className="text-xs text-blue-100">Auto-generates Student & Exam subfolders</p>
+                  <h3 className="text-base font-black">New College Folder</h3>
+                  <p className="text-xs text-amber-100">Auto-generates Student & Exam subfolders</p>
                 </div>
               </div>
               <button
@@ -409,7 +402,7 @@ export default function FoldersDashboardPage() {
 
               <div>
                 <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                  College Name <span className="text-rose-500">*</span>
+                  Folder / College Name <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -423,7 +416,7 @@ export default function FoldersDashboardPage() {
 
               <div>
                 <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                  College Code / Acronym (Optional)
+                  College Code / Acronym
                 </label>
                 <input
                   type="text"
@@ -436,26 +429,15 @@ export default function FoldersDashboardPage() {
 
               <div>
                 <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                  Description (Optional)
+                  Description
                 </label>
                 <textarea
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Brief notes regarding campus, batches, or location..."
+                  placeholder="Campus notes or department remarks..."
                   rows={2}
                   className="w-full px-3.5 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
                 />
-              </div>
-
-              <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-2xs font-bold text-blue-900 space-y-1">
-                <p className="flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Automatic Subfolder Generation:</span>
-                </p>
-                <p className="text-slate-600 font-medium">
-                  • 📁 <span className="font-bold">Student Credential Data</span> (Registration & Records)<br />
-                  • 📁 <span className="font-bold">Exams & Results</span> (Exam Papers & Attempt Analytics)
-                </p>
               </div>
 
               <div className="pt-2 flex items-center justify-end space-x-2">
@@ -486,8 +468,8 @@ export default function FoldersDashboardPage() {
           <div className="w-full max-w-md glossy-card rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
             <div className="p-5 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center space-x-2.5">
-                <Edit2 className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-black">Edit College Folder</h3>
+                <Edit2 className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-black">Rename College Folder</h3>
               </div>
               <button
                 onClick={() => setEditCollege(null)}
@@ -500,7 +482,7 @@ export default function FoldersDashboardPage() {
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
               <div>
                 <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                  College Name
+                  Folder Name
                 </label>
                 <input
                   type="text"
@@ -523,18 +505,6 @@ export default function FoldersDashboardPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={editDesc}
-                  onChange={(e) => setEditDesc(e.target.value)}
-                  rows={2}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
-                />
-              </div>
-
               <div className="pt-2 flex items-center justify-end space-x-2">
                 <button
                   type="button"
@@ -548,7 +518,7 @@ export default function FoldersDashboardPage() {
                   disabled={updating}
                   className="glossy-button-primary text-white text-xs font-black px-5 py-2.5 rounded-xl disabled:opacity-50"
                 >
-                  {updating ? 'Saving...' : 'Save Changes'}
+                  {updating ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
@@ -564,10 +534,9 @@ export default function FoldersDashboardPage() {
               <AlertTriangle className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-950">Delete College Folder?</h3>
+              <h3 className="text-base font-black text-slate-950">Delete Folder?</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Are you sure you want to permanently delete <strong className="text-slate-900">{deleteTarget.name}</strong>?
-                This will delete all contained student credentials, exams, questions, and attempt records.
+                Are you sure you want to delete <strong>{deleteTarget.name}</strong> and all its contents?
               </p>
             </div>
 
@@ -585,7 +554,7 @@ export default function FoldersDashboardPage() {
                 disabled={deleting}
                 className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-md disabled:opacity-50"
               >
-                {deleting ? 'Deleting...' : 'Yes, Delete Folder'}
+                {deleting ? 'Deleting...' : 'Yes, Delete'}
               </button>
             </div>
           </div>

@@ -4,22 +4,19 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import ExplorerFolder from '@/components/common/ExplorerFolder';
 import {
   FolderTree,
-  Folder,
   Users,
   FileCheck2,
   ArrowLeft,
-  ArrowRight,
+  ChevronRight,
   ShieldCheck,
   Building2,
   Calendar,
   Award,
   Sparkles,
-  ChevronRight,
   Loader2,
-  UserPlus,
-  PlusCircle,
 } from 'lucide-react';
 
 interface College {
@@ -67,7 +64,7 @@ export default function CollegeFolderDetailPage() {
       <div className="min-h-screen bg-slate-50 flex">
         <AdminSidebar currentRole="Main Super Admin" />
         <div className="flex-1 lg:pl-64 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
         </div>
       </div>
     );
@@ -80,7 +77,7 @@ export default function CollegeFolderDetailPage() {
       <AdminSidebar currentRole="Main Super Admin" />
 
       <main className="flex-1 lg:pl-64 flex flex-col min-w-0">
-        {/* Glossy Top Bar */}
+        {/* Top Header */}
         <header className="glossy-header px-6 py-4 sticky top-0 z-30 flex items-center justify-between border-b border-slate-200/80">
           <div className="flex items-center space-x-3">
             <Link
@@ -94,10 +91,10 @@ export default function CollegeFolderDetailPage() {
               <div className="flex items-center space-x-2 text-2xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">
                 <Link href="/admin/folders" className="hover:text-blue-600">Folders</Link>
                 <span>/</span>
-                <span className="text-blue-600 font-extrabold">{college.name}</span>
+                <span className="text-amber-600 font-extrabold">{college.name}</span>
               </div>
               <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center space-x-2">
-                <Building2 className="w-5 h-5 text-blue-600" />
+                <Building2 className="w-5 h-5 text-amber-500" />
                 <span>{college.name}</span>
               </h1>
             </div>
@@ -110,106 +107,49 @@ export default function CollegeFolderDetailPage() {
           </div>
         </header>
 
-        <div className="p-6 max-w-5xl w-full mx-auto space-y-6">
-          {/* College Banner Overview */}
-          <div className="glossy-card rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-blue-600 to-indigo-700 text-white relative overflow-hidden shadow-lg">
-            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1.5 max-w-xl">
-                <div className="inline-flex items-center space-x-2 px-3 py-1 bg-white/15 backdrop-blur-xs rounded-full text-2xs font-black uppercase tracking-wider text-blue-100">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>College-Level Isolated Scope</span>
-                </div>
-                <h2 className="text-2xl font-black">{college.name}</h2>
-                <p className="text-xs text-blue-100 leading-relaxed font-medium">
-                  {college.description || 'Enterprise Assessment Environment for this institution.'}
-                </p>
-              </div>
+        <div className="p-6 max-w-7xl w-full mx-auto space-y-6">
+          {/* Windows Explorer Style Address Bar */}
+          <div className="glossy-panel p-3 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center space-x-2 bg-white/90 px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs">
+              <span className="text-amber-500">📁</span>
+              <Link href="/admin/folders" className="text-xs font-bold text-slate-600 hover:text-blue-600">Folders</Link>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs font-black text-slate-900">{college.name}</span>
+            </div>
 
-              <div className="flex items-center space-x-3 shrink-0">
-                <div className="text-center px-4 py-2.5 bg-white/10 backdrop-blur-xs rounded-2xl border border-white/10">
-                  <p className="text-2xs uppercase tracking-wider text-blue-200 font-bold">Students</p>
-                  <p className="text-xl font-black">{college.student_count || 0}</p>
-                </div>
-                <div className="text-center px-4 py-2.5 bg-white/10 backdrop-blur-xs rounded-2xl border border-white/10">
-                  <p className="text-2xs uppercase tracking-wider text-blue-200 font-bold">Exams</p>
-                  <p className="text-xl font-black">{college.exam_count || 0}</p>
-                </div>
-              </div>
+            <div className="text-2xs font-bold text-slate-400">
+              2 subfolders automatically created
             </div>
           </div>
 
-          <div className="space-y-2">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 px-1">
-              Default Auto-Created Folders
-            </h3>
+          {/* Windows Explorer Folder View Area */}
+          <div className="glossy-card rounded-3xl p-8 border border-slate-200/90 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                Institutional Subfolders
+              </h3>
+              <span className="text-2xs text-slate-400 font-medium">Double-click or click to open</span>
+            </div>
 
-            {/* Subfolders Grid (The 2 requested folders) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Folder Icons Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8 justify-items-start">
               {/* Folder 1: Student Credential Data */}
-              <div className="glossy-card rounded-3xl p-6 hover:shadow-xl transition-all duration-200 border border-slate-200/90 flex flex-col justify-between group hover:border-emerald-300">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-sm">
-                      <Users className="w-7 h-7" />
-                    </div>
-                    <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-2xs font-black border border-emerald-100">
-                      {college.student_count || 0} Records
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-base font-black text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center space-x-2">
-                      <span>📁 Student Credential Data</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">
-                      Register candidates, manage roll numbers, registration emails, branch/department data, and export student credential rosters.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
-                  <Link
-                    href={`/admin/folders/${college.id}/students`}
-                    className="inline-flex items-center space-x-2 text-xs font-black text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-4 py-2.5 rounded-xl transition-all w-full justify-center shadow-2xs"
-                  >
-                    <span>Open Student Folder</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
+              <ExplorerFolder
+                name="Student Credential Data"
+                subLabel="Candidate Registrations"
+                badge={`${college.student_count || 0} Records`}
+                innerIcon={<Users className="w-4 h-4 text-emerald-600" />}
+                onClick={() => router.push(`/admin/folders/${college.id}/students`)}
+              />
 
               {/* Folder 2: Exams & Results */}
-              <div className="glossy-card rounded-3xl p-6 hover:shadow-xl transition-all duration-200 border border-slate-200/90 flex flex-col justify-between group hover:border-indigo-300">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white flex items-center justify-center shadow-sm">
-                      <FileCheck2 className="w-7 h-7" />
-                    </div>
-                    <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-2xs font-black border border-indigo-100">
-                      {college.exam_count || 0} Assessments
-                    </span>
-                  </div>
-
-                  <div>
-                    <h3 className="text-base font-black text-slate-900 group-hover:text-indigo-700 transition-colors flex items-center space-x-2">
-                      <span>📁 Exams & Results</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1.5 font-medium leading-relaxed">
-                      Create assessment papers, add MCQ questions, publish exam links, track candidate scores, and export detailed evaluation results.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
-                  <Link
-                    href={`/admin/folders/${college.id}/exams`}
-                    className="inline-flex items-center space-x-2 text-xs font-black text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-4 py-2.5 rounded-xl transition-all w-full justify-center shadow-2xs"
-                  >
-                    <span>Open Exams & Results</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
+              <ExplorerFolder
+                name="Exams & Results"
+                subLabel="Assessments & Scorecards"
+                badge={`${college.exam_count || 0} Assessments`}
+                innerIcon={<FileCheck2 className="w-4 h-4 text-indigo-600" />}
+                onClick={() => router.push(`/admin/folders/${college.id}/exams`)}
+              />
             </div>
           </div>
         </div>
