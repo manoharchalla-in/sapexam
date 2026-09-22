@@ -23,10 +23,6 @@ import {
   Building2,
   ChevronRight,
   ExternalLink,
-  Database,
-  Search,
-  Sparkles,
-  BookmarkPlus,
 } from 'lucide-react';
 
 interface CollegeExam {
@@ -62,21 +58,6 @@ interface Question {
   order_index: number;
 }
 
-interface BankQuestion {
-  id: number;
-  question_text: string;
-  question_type: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  correct_answer: string;
-  marks: number;
-  difficulty: string;
-  topic: string;
-  explanation: string;
-}
-
 export default function ExamPaperDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -93,7 +74,6 @@ export default function ExamPaperDetailPage() {
 
   // Question Modal
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
-  const [saveToBank, setSaveToBank] = useState(false);
   const [questionForm, setQuestionForm] = useState({
     id: undefined as number | undefined,
     question_text: '',
@@ -107,15 +87,6 @@ export default function ExamPaperDetailPage() {
     explanation: '',
   });
   const [savingQuestion, setSavingQuestion] = useState(false);
-
-  // Question Bank Import Modal
-  const [isBankImportOpen, setIsBankImportOpen] = useState(false);
-  const [bankQuestions, setBankQuestions] = useState<BankQuestion[]>([]);
-  const [bankLoading, setBankLoading] = useState(false);
-  const [bankSearch, setBankSearch] = useState('');
-  const [bankTopic, setBankTopic] = useState('all');
-  const [selectedBankIds, setSelectedBankIds] = useState<number[]>([]);
-  const [importingBank, setImportingBank] = useState(false);
 
   // Delete Target Modal
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'question'; id: any; name?: string } | null>(null);
@@ -148,52 +119,6 @@ export default function ExamPaperDetailPage() {
   useEffect(() => {
     if (collegeId && examId) loadAllData();
   }, [collegeId, examId]);
-
-  const loadBankQuestions = async () => {
-    try {
-      setBankLoading(true);
-      const res = await fetch(`/api/admin/question-bank`);
-      const data = await res.json();
-      if (data.questions) {
-        setBankQuestions(data.questions);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setBankLoading(false);
-    }
-  };
-
-  const handleOpenBankModal = () => {
-    setSelectedBankIds([]);
-    setIsBankImportOpen(true);
-    loadBankQuestions();
-  };
-
-  const handleImportBankQuestions = async () => {
-    if (selectedBankIds.length === 0) return;
-    setImportingBank(true);
-
-    try {
-      const res = await fetch(`/api/admin/folders/colleges/${collegeId}/exams/${examId}/import-bank`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bankIds: selectedBankIds }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setIsBankImportOpen(false);
-        setSelectedBankIds([]);
-        loadAllData();
-      } else {
-        alert(data.message || 'Error importing questions');
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setImportingBank(false);
-    }
-  };
 
   const handleStatusToggle = async (newStatus: 'Draft' | 'Published') => {
     if (!exam) return;
@@ -228,28 +153,7 @@ export default function ExamPaperDetailPage() {
       });
       const data = await res.json();
       if (data.success) {
-        // If saveToBank is checked, also save to question bank
-        if (saveToBank) {
-          await fetch(`/api/admin/folders/colleges/${collegeId}/exams/${examId}/save-to-bank`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              question_text: questionForm.question_text,
-              question_type: questionForm.question_type,
-              option_a: questionForm.option_a,
-              option_b: questionForm.option_b,
-              option_c: questionForm.option_c,
-              option_d: questionForm.option_d,
-              correct_answer: questionForm.correct_answer,
-              marks: questionForm.marks,
-              explanation: questionForm.explanation,
-              topic: exam?.subject || 'SAP ABAP',
-            }),
-          });
-        }
-
         setIsQuestionModalOpen(false);
-        setSaveToBank(false);
         setQuestionForm({
           id: undefined,
           question_text: '',
@@ -318,15 +222,6 @@ export default function ExamPaperDetailPage() {
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
-
-  const bankTopics = Array.from(new Set(bankQuestions.map((q) => q.topic).filter(Boolean)));
-  const filteredBank = bankQuestions.filter((q) => {
-    const matchesSearch =
-      q.question_text.toLowerCase().includes(bankSearch.toLowerCase()) ||
-      (q.explanation && q.explanation.toLowerCase().includes(bankSearch.toLowerCase()));
-    const matchesTopic = bankTopic === 'all' || q.topic === bankTopic;
-    return matchesSearch && matchesTopic;
-  });
 
   if (loading && !exam) {
     return (
@@ -480,7 +375,7 @@ export default function ExamPaperDetailPage() {
 
           {/* Exam Question Paper Workspace */}
           <div className="space-y-5">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-black text-slate-900 flex items-center space-x-2">
                   <FileCode className="w-5 h-5 text-indigo-600" />
@@ -491,38 +386,27 @@ export default function ExamPaperDetailPage() {
                 </p>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleOpenBankModal}
-                  className="glossy-button-secondary text-indigo-700 text-xs font-black px-3.5 py-2 rounded-xl flex items-center space-x-1.5 shadow-2xs border border-indigo-200"
-                >
-                  <Database className="w-4 h-4 text-indigo-600" />
-                  <span>📚 Import from Question Bank</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSaveToBank(false);
-                    setQuestionForm({
-                      id: undefined,
-                      question_text: '',
-                      question_type: 'Single Choice',
-                      option_a: '',
-                      option_b: '',
-                      option_c: '',
-                      option_d: '',
-                      correct_answer: 'A',
-                      marks: 1,
-                      explanation: '',
-                    });
-                    setIsQuestionModalOpen(true);
-                  }}
-                  className="glossy-button-primary text-white text-xs font-black px-4 py-2 rounded-xl flex items-center space-x-1.5 shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>+ Add Question</span>
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setQuestionForm({
+                    id: undefined,
+                    question_text: '',
+                    question_type: 'Single Choice',
+                    option_a: '',
+                    option_b: '',
+                    option_c: '',
+                    option_d: '',
+                    correct_answer: 'A',
+                    marks: 1,
+                    explanation: '',
+                  });
+                  setIsQuestionModalOpen(true);
+                }}
+                className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl flex items-center space-x-1.5 shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Add Question</span>
+              </button>
             </div>
 
             {questions.length === 0 ? (
@@ -532,27 +416,15 @@ export default function ExamPaperDetailPage() {
                 </div>
                 <p className="text-sm font-bold text-slate-700">No Questions Added to this Paper Yet</p>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Import pre-built questions from the <strong>Question Bank</strong> or click "+ Add Question" to manually write questions.
+                  Click "+ Add Question" to start building this exam paper with multiple choice options and answer keys.
                 </p>
-                <div className="flex items-center justify-center space-x-3 pt-2">
-                  <button
-                    onClick={handleOpenBankModal}
-                    className="glossy-button-secondary text-indigo-700 text-xs font-black px-4 py-2.5 rounded-xl inline-flex items-center space-x-1.5 shadow-2xs border border-indigo-200"
-                  >
-                    <Database className="w-4 h-4 text-indigo-600" />
-                    <span>📚 Import from Question Bank</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSaveToBank(false);
-                      setIsQuestionModalOpen(true);
-                    }}
-                    className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl inline-flex items-center space-x-1.5 shadow-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>+ Add Custom Question</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => setIsQuestionModalOpen(true)}
+                  className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl inline-flex items-center space-x-1.5 shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Add First Question</span>
+                </button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -579,7 +451,6 @@ export default function ExamPaperDetailPage() {
                       <div className="flex items-center space-x-1 shrink-0">
                         <button
                           onClick={() => {
-                            setSaveToBank(false);
                             setQuestionForm({
                               id: q.id,
                               question_text: q.question_text,
@@ -655,155 +526,6 @@ export default function ExamPaperDetailPage() {
           </div>
         </div>
       </main>
-
-      {/* IMPORT FROM QUESTION BANK MODAL */}
-      {isBankImportOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl glossy-card rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
-            <div className="p-5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center space-x-2.5">
-                <Database className="w-5 h-5 text-white" />
-                <div>
-                  <h3 className="text-base font-black">Import from Question Bank</h3>
-                  <p className="text-[11px] text-indigo-100 font-medium">
-                    Select questions to instantly add to {exam?.name}
-                  </p>
-                </div>
-              </div>
-              <button onClick={() => setIsBankImportOpen(false)} className="p-1 text-white/80 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Filter Bar */}
-            <div className="p-4 bg-slate-100/90 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={bankSearch}
-                  onChange={(e) => setBankSearch(e.target.value)}
-                  placeholder="Search bank questions..."
-                  className="w-full pl-9 pr-3 py-1.5 text-xs font-medium rounded-xl glossy-input text-slate-900"
-                />
-              </div>
-
-              <select
-                value={bankTopic}
-                onChange={(e) => setBankTopic(e.target.value)}
-                className="px-3 py-1.5 text-xs font-bold rounded-xl glossy-input text-slate-800"
-              >
-                <option value="all">All Topics ({bankQuestions.length})</option>
-                {bankTopics.map((top) => (
-                  <option key={top} value={top}>
-                    {top}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (selectedBankIds.length === filteredBank.length) {
-                    setSelectedBankIds([]);
-                  } else {
-                    setSelectedBankIds(filteredBank.map((q) => q.id));
-                  }
-                }}
-                className="px-3 py-1.5 text-2xs font-bold rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-              >
-                {selectedBankIds.length === filteredBank.length ? 'Deselect All' : 'Select All Filtered'}
-              </button>
-            </div>
-
-            {/* Questions List */}
-            <div className="p-6 space-y-3 overflow-y-auto flex-1">
-              {bankLoading ? (
-                <div className="py-12 flex flex-col items-center justify-center space-y-2">
-                  <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
-                  <p className="text-xs text-slate-500 font-bold">Loading Question Bank...</p>
-                </div>
-              ) : filteredBank.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-500">
-                  No questions found matching your filter criteria.
-                </div>
-              ) : (
-                filteredBank.map((q) => {
-                  const isSelected = selectedBankIds.includes(q.id);
-                  return (
-                    <div
-                      key={q.id}
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedBankIds(selectedBankIds.filter((id) => id !== q.id));
-                        } else {
-                          setSelectedBankIds([...selectedBankIds, q.id]);
-                        }
-                      }}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-indigo-500 bg-indigo-50/40 shadow-xs'
-                          : 'border-slate-200/90 bg-white hover:border-indigo-300'
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          className="w-4 h-4 text-indigo-600 rounded mt-0.5 cursor-pointer"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-slate-100 text-slate-700">
-                              {q.topic}
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              {q.difficulty} • {q.marks || 1} Mark
-                            </span>
-                            <span className="text-[10px] font-bold text-emerald-700 ml-auto">
-                              Key: {q.correct_answer}
-                            </span>
-                          </div>
-                          <h4 className="text-xs font-black text-slate-900 leading-relaxed">
-                            {q.question_text}
-                          </h4>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
-              <span className="text-xs font-bold text-slate-600">
-                {selectedBankIds.length} question(s) selected
-              </span>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setIsBankImportOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleImportBankQuestions}
-                  disabled={selectedBankIds.length === 0 || importingBank}
-                  className="glossy-button-primary text-white text-xs font-black px-5 py-2.5 rounded-xl flex items-center space-x-2 disabled:opacity-50"
-                >
-                  {importingBank ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  <span>{importingBank ? 'Importing...' : `Import Selected (${selectedBankIds.length})`}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ADD / EDIT QUESTION MODAL */}
       {isQuestionModalOpen && (
@@ -905,20 +627,6 @@ export default function ExamPaperDetailPage() {
                   placeholder="Optional technical rationale..."
                   className="w-full px-3.5 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
                 />
-              </div>
-
-              {/* Save to Bank Checkbox */}
-              <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-100 flex items-center space-x-2.5">
-                <input
-                  type="checkbox"
-                  id="saveToBankCheck"
-                  checked={saveToBank}
-                  onChange={(e) => setSaveToBank(e.target.checked)}
-                  className="w-4 h-4 text-indigo-600 rounded cursor-pointer"
-                />
-                <label htmlFor="saveToBankCheck" className="text-xs font-bold text-indigo-900 cursor-pointer">
-                  Save this question to Question Bank for future reuse across colleges
-                </label>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
