@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Settings,
   Sparkles,
+  FolderTree,
 } from 'lucide-react';
 import AppLogo from '@/components/common/AppLogo';
 
@@ -39,6 +40,7 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
 
   const navItems = [
     { label: 'Dashboard & Overview', href: '/admin', icon: LayoutDashboard },
+    { label: 'Folders', href: '/admin/folders', icon: FolderTree },
     { label: 'Assessment Results', href: '/admin/results', icon: Award },
     { label: 'Filter All Assessment Records', href: '/admin/records', icon: Filter },
     { label: 'Trainer Panels & Credentials', href: '/admin/trainers', icon: UserCheck },

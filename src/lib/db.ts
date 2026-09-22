@@ -112,6 +112,119 @@ db.exec(`
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  /* COLLEGE FOLDER SYSTEM TABLES */
+  CREATE TABLE IF NOT EXISTS colleges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    folder_id TEXT UNIQUE NOT NULL,
+    name TEXT UNIQUE NOT NULL,
+    code TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_colleges_folder_id ON colleges(folder_id);
+  CREATE INDEX IF NOT EXISTS idx_colleges_name ON colleges(name);
+
+  CREATE TABLE IF NOT EXISTS college_students (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    college_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    roll_number TEXT NOT NULL,
+    registration_number TEXT DEFAULT '',
+    email TEXT NOT NULL,
+    mobile TEXT DEFAULT '',
+    department TEXT DEFAULT '',
+    branch TEXT DEFAULT '',
+    year TEXT DEFAULT '',
+    section TEXT DEFAULT '',
+    gender TEXT DEFAULT '',
+    dob TEXT DEFAULT '',
+    username TEXT DEFAULT '',
+    password_hash TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(college_id) REFERENCES colleges(id) ON DELETE CASCADE,
+    UNIQUE(college_id, roll_number),
+    UNIQUE(college_id, email)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_students_college ON college_students(college_id);
+  CREATE INDEX IF NOT EXISTS idx_students_roll ON college_students(roll_number);
+  CREATE INDEX IF NOT EXISTS idx_students_email ON college_students(email);
+
+  CREATE TABLE IF NOT EXISTS college_exams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    college_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    code TEXT DEFAULT '',
+    subject TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    duration_minutes INTEGER NOT NULL DEFAULT 30,
+    start_time TEXT DEFAULT '',
+    end_time TEXT DEFAULT '',
+    total_questions INTEGER NOT NULL DEFAULT 10,
+    total_marks REAL NOT NULL DEFAULT 10,
+    passing_marks REAL NOT NULL DEFAULT 5,
+    instructions TEXT DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'Draft',
+    public_token TEXT UNIQUE NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(college_id) REFERENCES colleges(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_college_exams_college ON college_exams(college_id);
+  CREATE INDEX IF NOT EXISTS idx_college_exams_token ON college_exams(public_token);
+
+  CREATE TABLE IF NOT EXISTS college_exam_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_id INTEGER NOT NULL,
+    question_text TEXT NOT NULL,
+    question_type TEXT NOT NULL DEFAULT 'Single Choice',
+    option_a TEXT NOT NULL,
+    option_b TEXT NOT NULL,
+    option_c TEXT NOT NULL,
+    option_d TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    marks REAL NOT NULL DEFAULT 1,
+    explanation TEXT DEFAULT '',
+    order_index INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(exam_id) REFERENCES college_exams(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_ceq_exam ON college_exam_questions(exam_id);
+
+  CREATE TABLE IF NOT EXISTS college_exam_attempts (
+    id TEXT PRIMARY KEY,
+    exam_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    college_id INTEGER NOT NULL,
+    started_at TEXT NOT NULL,
+    submitted_at TEXT DEFAULT '',
+    time_taken_seconds INTEGER DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'In Progress',
+    total_questions INTEGER NOT NULL DEFAULT 0,
+    attempted_count INTEGER NOT NULL DEFAULT 0,
+    correct_answers INTEGER NOT NULL DEFAULT 0,
+    incorrect_answers INTEGER NOT NULL DEFAULT 0,
+    unanswered_answers INTEGER NOT NULL DEFAULT 0,
+    total_marks REAL NOT NULL DEFAULT 0,
+    obtained_marks REAL NOT NULL DEFAULT 0,
+    percentage REAL NOT NULL DEFAULT 0,
+    result_status TEXT NOT NULL DEFAULT 'FAIL',
+    answers_json TEXT DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(exam_id) REFERENCES college_exams(id) ON DELETE CASCADE,
+    FOREIGN KEY(student_id) REFERENCES college_students(id) ON DELETE CASCADE,
+    FOREIGN KEY(college_id) REFERENCES colleges(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_cea_exam ON college_exam_attempts(exam_id);
+  CREATE INDEX IF NOT EXISTS idx_cea_student ON college_exam_attempts(student_id);
+  CREATE INDEX IF NOT EXISTS idx_cea_college ON college_exam_attempts(college_id);
 `);
 
 try {
@@ -1378,4 +1491,869 @@ export function createQuestionPaperFromTemplate(
   return getQuestionPaperById(createdPaper.id) || null;
 }
 
+// ----------------------------------------------------
+// COLLEGE FOLDERS & DATA ISOLATION DB API
+// ----------------------------------------------------
+
+export interface CollegeRecord {
+  id: number;
+  folder_id: string;
+  name: string;
+  code: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+  student_count?: number;
+  exam_count?: number;
+}
+
+export function getAllColleges(search?: string): CollegeRecord[] {
+  let query = `
+    SELECT c.*,
+      (SELECT COUNT(*) FROM college_students cs WHERE cs.college_id = c.id) as student_count,
+      (SELECT COUNT(*) FROM college_exams ce WHERE ce.college_id = c.id) as exam_count
+    FROM colleges c
+  `;
+  const params: any[] = [];
+  if (search && search.trim() !== '') {
+    query += ` WHERE LOWER(c.name) LIKE ? OR LOWER(c.code) LIKE ? OR LOWER(c.folder_id) LIKE ?`;
+    const term = `%${search.trim().toLowerCase()}%`;
+    params.push(term, term, term);
+  }
+  query += ` ORDER BY c.name ASC`;
+  const stmt = db.prepare(query);
+  return stmt.all(...params) as CollegeRecord[];
+}
+
+export function getCollegeById(id: number): CollegeRecord | undefined {
+  const stmt = db.prepare(`
+    SELECT c.*,
+      (SELECT COUNT(*) FROM college_students cs WHERE cs.college_id = c.id) as student_count,
+      (SELECT COUNT(*) FROM college_exams ce WHERE ce.college_id = c.id) as exam_count
+    FROM colleges c
+    WHERE c.id = ?
+  `);
+  return stmt.get(id) as CollegeRecord | undefined;
+}
+
+export function getCollegeByFolderId(folderId: string): CollegeRecord | undefined {
+  const stmt = db.prepare(`
+    SELECT c.*,
+      (SELECT COUNT(*) FROM college_students cs WHERE cs.college_id = c.id) as student_count,
+      (SELECT COUNT(*) FROM college_exams ce WHERE ce.college_id = c.id) as exam_count
+    FROM colleges c
+    WHERE c.folder_id = ?
+  `);
+  return stmt.get(folderId.trim()) as CollegeRecord | undefined;
+}
+
+export function createCollege(data: { name: string; code?: string; description?: string }): CollegeRecord {
+  const cleanName = data.name.trim();
+  const now = new Date().toISOString();
+  const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'college';
+  const randomSuffix = Math.random().toString(36).substring(2, 7);
+  const folder_id = `fld-${slug}-${randomSuffix}`;
+  const code = (data.code || slug.substring(0, 8)).toUpperCase();
+
+  const stmt = db.prepare(`
+    INSERT INTO colleges (folder_id, name, code, description, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const res = stmt.run(folder_id, cleanName, code, data.description || '', now, now);
+  return getCollegeById(Number(res.lastInsertRowid))!;
+}
+
+export function updateCollege(id: number, data: { name?: string; code?: string; description?: string }): boolean {
+  const existing = getCollegeById(id);
+  if (!existing) return false;
+  const now = new Date().toISOString();
+  const stmt = db.prepare(`
+    UPDATE colleges
+    SET name = ?, code = ?, description = ?, updated_at = ?
+    WHERE id = ?
+  `);
+  const res = stmt.run(
+    data.name !== undefined ? data.name.trim() : existing.name,
+    data.code !== undefined ? data.code.trim().toUpperCase() : existing.code,
+    data.description !== undefined ? data.description : existing.description,
+    now,
+    id
+  );
+  return res.changes > 0;
+}
+
+export function deleteCollege(id: number): boolean {
+  const stmt = db.prepare(`DELETE FROM colleges WHERE id = ?`);
+  const res = stmt.run(id);
+  return res.changes > 0;
+}
+
+// ----------------------------------------------------
+// COLLEGE STUDENTS CREDENTIAL DATA DB API
+// ----------------------------------------------------
+
+export interface CollegeStudentRecord {
+  id: number;
+  college_id: number;
+  college_name?: string;
+  name: string;
+  roll_number: string;
+  registration_number: string;
+  email: string;
+  mobile: string;
+  department: string;
+  branch: string;
+  year: string;
+  section: string;
+  gender: string;
+  dob: string;
+  username: string;
+  password_hash: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function getStudentsByCollegeId(
+  collegeId: number,
+  options?: { search?: string; department?: string; branch?: string; year?: string }
+): CollegeStudentRecord[] {
+  let query = `
+    SELECT cs.*, c.name as college_name
+    FROM college_students cs
+    JOIN colleges c ON c.id = cs.college_id
+    WHERE cs.college_id = ?
+  `;
+  const params: any[] = [collegeId];
+
+  if (options?.search && options.search.trim() !== '') {
+    const term = `%${options.search.trim().toLowerCase()}%`;
+    query += ` AND (LOWER(cs.name) LIKE ? OR LOWER(cs.roll_number) LIKE ? OR LOWER(cs.registration_number) LIKE ? OR LOWER(cs.email) LIKE ? OR LOWER(cs.mobile) LIKE ?)`;
+    params.push(term, term, term, term, term);
+  }
+
+  if (options?.department && options.department !== 'all') {
+    query += ` AND LOWER(cs.department) = LOWER(?)`;
+    params.push(options.department.trim());
+  }
+
+  if (options?.branch && options.branch !== 'all') {
+    query += ` AND LOWER(cs.branch) = LOWER(?)`;
+    params.push(options.branch.trim());
+  }
+
+  if (options?.year && options.year !== 'all') {
+    query += ` AND cs.year = ?`;
+    params.push(options.year.trim());
+  }
+
+  query += ` ORDER BY cs.name ASC`;
+  const stmt = db.prepare(query);
+  return stmt.all(...params) as CollegeStudentRecord[];
+}
+
+export function getStudentById(id: number): CollegeStudentRecord | undefined {
+  const stmt = db.prepare(`
+    SELECT cs.*, c.name as college_name
+    FROM college_students cs
+    JOIN colleges c ON c.id = cs.college_id
+    WHERE cs.id = ?
+  `);
+  return stmt.get(id) as CollegeStudentRecord | undefined;
+}
+
+export function getStudentByRollOrEmail(collegeId: number, identifier: string): CollegeStudentRecord | undefined {
+  const clean = identifier.trim().toLowerCase();
+  const stmt = db.prepare(`
+    SELECT cs.*, c.name as college_name
+    FROM college_students cs
+    JOIN colleges c ON c.id = cs.college_id
+    WHERE cs.college_id = ? AND (LOWER(cs.roll_number) = ? OR LOWER(cs.registration_number) = ? OR LOWER(cs.email) = ? OR LOWER(cs.username) = ?)
+  `);
+  return stmt.get(collegeId, clean, clean, clean, clean) as CollegeStudentRecord | undefined;
+}
+
+export function createCollegeStudent(data: {
+  college_id: number;
+  name: string;
+  roll_number: string;
+  registration_number?: string;
+  email: string;
+  mobile?: string;
+  department?: string;
+  branch?: string;
+  year?: string;
+  section?: string;
+  gender?: string;
+  dob?: string;
+  username?: string;
+  password?: string;
+}): CollegeStudentRecord {
+  const now = new Date().toISOString();
+  const cleanRoll = data.roll_number.trim().toUpperCase();
+  const cleanEmail = data.email.trim().toLowerCase();
+  const username = data.username?.trim() || cleanRoll;
+  const pwd = data.password?.trim() || '123456';
+
+  const stmt = db.prepare(`
+    INSERT INTO college_students (
+      college_id, name, roll_number, registration_number, email, mobile,
+      department, branch, year, section, gender, dob, username, password_hash,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const res = stmt.run(
+    data.college_id,
+    data.name.trim(),
+    cleanRoll,
+    data.registration_number?.trim() || '',
+    cleanEmail,
+    data.mobile?.trim() || '',
+    data.department?.trim() || '',
+    data.branch?.trim() || '',
+    data.year?.trim() || '',
+    data.section?.trim() || '',
+    data.gender?.trim() || '',
+    data.dob?.trim() || '',
+    username,
+    pwd, // Secure reference
+    now,
+    now
+  );
+
+  return getStudentById(Number(res.lastInsertRowid))!;
+}
+
+export function updateCollegeStudent(
+  id: number,
+  data: Partial<Omit<CollegeStudentRecord, 'id' | 'college_id' | 'created_at'>>
+): boolean {
+  const existing = getStudentById(id);
+  if (!existing) return false;
+  const now = new Date().toISOString();
+
+  const stmt = db.prepare(`
+    UPDATE college_students
+    SET name = ?, roll_number = ?, registration_number = ?, email = ?, mobile = ?,
+        department = ?, branch = ?, year = ?, section = ?, gender = ?, dob = ?,
+        username = ?, password_hash = ?, updated_at = ?
+    WHERE id = ?
+  `);
+
+  const res = stmt.run(
+    data.name !== undefined ? data.name.trim() : existing.name,
+    data.roll_number !== undefined ? data.roll_number.trim().toUpperCase() : existing.roll_number,
+    data.registration_number !== undefined ? data.registration_number.trim() : existing.registration_number,
+    data.email !== undefined ? data.email.trim().toLowerCase() : existing.email,
+    data.mobile !== undefined ? data.mobile.trim() : existing.mobile,
+    data.department !== undefined ? data.department.trim() : existing.department,
+    data.branch !== undefined ? data.branch.trim() : existing.branch,
+    data.year !== undefined ? data.year.trim() : existing.year,
+    data.section !== undefined ? data.section.trim() : existing.section,
+    data.gender !== undefined ? data.gender.trim() : existing.gender,
+    data.dob !== undefined ? data.dob.trim() : existing.dob,
+    data.username !== undefined ? data.username.trim() : existing.username,
+    data.password_hash !== undefined ? data.password_hash.trim() : existing.password_hash,
+    now,
+    id
+  );
+
+  return res.changes > 0;
+}
+
+export function deleteCollegeStudent(id: number): boolean {
+  const stmt = db.prepare(`DELETE FROM college_students WHERE id = ?`);
+  const res = stmt.run(id);
+  return res.changes > 0;
+}
+
+// ----------------------------------------------------
+// COLLEGE EXAMS & PAPERS DB API
+// ----------------------------------------------------
+
+export interface CollegeExamRecord {
+  id: number;
+  college_id: number;
+  college_name?: string;
+  name: string;
+  code: string;
+  subject: string;
+  description: string;
+  duration_minutes: number;
+  start_time: string;
+  end_time: string;
+  total_questions: number;
+  total_marks: number;
+  passing_marks: number;
+  instructions: string;
+  status: 'Draft' | 'Published' | 'Closed';
+  public_token: string;
+  created_at: string;
+  updated_at: string;
+  question_count?: number;
+  attempt_count?: number;
+  pass_count?: number;
+  fail_count?: number;
+  avg_score?: number;
+}
+
+export function getExamsByCollegeId(collegeId: number): CollegeExamRecord[] {
+  const stmt = db.prepare(`
+    SELECT ce.*, c.name as college_name,
+      (SELECT COUNT(*) FROM college_exam_questions ceq WHERE ceq.exam_id = ce.id) as question_count,
+      (SELECT COUNT(*) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id) as attempt_count,
+      (SELECT COUNT(*) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id AND cea.result_status = 'PASS') as pass_count,
+      (SELECT COUNT(*) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id AND cea.result_status = 'FAIL') as fail_count,
+      (SELECT ROUND(AVG(cea.obtained_marks), 1) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id) as avg_score
+    FROM college_exams ce
+    JOIN colleges c ON c.id = ce.college_id
+    WHERE ce.college_id = ?
+    ORDER BY ce.created_at DESC
+  `);
+  return stmt.all(collegeId) as CollegeExamRecord[];
+}
+
+export function getExamById(id: number): CollegeExamRecord | undefined {
+  const stmt = db.prepare(`
+    SELECT ce.*, c.name as college_name,
+      (SELECT COUNT(*) FROM college_exam_questions ceq WHERE ceq.exam_id = ce.id) as question_count,
+      (SELECT COUNT(*) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id) as attempt_count,
+      (SELECT COUNT(*) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id AND cea.result_status = 'PASS') as pass_count,
+      (SELECT COUNT(*) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id AND cea.result_status = 'FAIL') as fail_count,
+      (SELECT ROUND(AVG(cea.obtained_marks), 1) FROM college_exam_attempts cea WHERE cea.exam_id = ce.id) as avg_score
+    FROM college_exams ce
+    JOIN colleges c ON c.id = ce.college_id
+    WHERE ce.id = ?
+  `);
+  return stmt.get(id) as CollegeExamRecord | undefined;
+}
+
+export function getExamByToken(token: string): CollegeExamRecord | undefined {
+  const stmt = db.prepare(`
+    SELECT ce.*, c.name as college_name,
+      (SELECT COUNT(*) FROM college_exam_questions ceq WHERE ceq.exam_id = ce.id) as question_count
+    FROM college_exams ce
+    JOIN colleges c ON c.id = ce.college_id
+    WHERE ce.public_token = ?
+  `);
+  return stmt.get(token.trim()) as CollegeExamRecord | undefined;
+}
+
+export function createCollegeExam(data: {
+  college_id: number;
+  name: string;
+  code?: string;
+  subject?: string;
+  description?: string;
+  duration_minutes?: number;
+  start_time?: string;
+  end_time?: string;
+  total_questions?: number;
+  total_marks?: number;
+  passing_marks?: number;
+  instructions?: string;
+  status?: 'Draft' | 'Published' | 'Closed';
+}): CollegeExamRecord {
+  const now = new Date().toISOString();
+  const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'exam';
+  const randomSuffix = Math.random().toString(36).substring(2, 8);
+  const public_token = `ex-${slug}-${randomSuffix}`;
+  const code = (data.code || slug.substring(0, 8)).toUpperCase();
+
+  const stmt = db.prepare(`
+    INSERT INTO college_exams (
+      college_id, name, code, subject, description, duration_minutes,
+      start_time, end_time, total_questions, total_marks, passing_marks,
+      instructions, status, public_token, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const res = stmt.run(
+    data.college_id,
+    data.name.trim(),
+    code,
+    data.subject?.trim() || 'SAP ABAP',
+    data.description || '',
+    data.duration_minutes || 30,
+    data.start_time || '',
+    data.end_time || '',
+    data.total_questions || 10,
+    data.total_marks || 10,
+    data.passing_marks || 5,
+    data.instructions || 'Answer all questions within the allocated time.',
+    data.status || 'Draft',
+    public_token,
+    now,
+    now
+  );
+
+  return getExamById(Number(res.lastInsertRowid))!;
+}
+
+export function updateCollegeExam(id: number, data: Partial<CollegeExamRecord>): boolean {
+  const existing = getExamById(id);
+  if (!existing) return false;
+  const now = new Date().toISOString();
+
+  // Recalculate questions count and total marks
+  const questions = getQuestionsByExamId(id);
+  const calculatedTotalMarks = questions.reduce((sum, q) => sum + (q.marks || 1), 0);
+
+  const stmt = db.prepare(`
+    UPDATE college_exams
+    SET name = ?, code = ?, subject = ?, description = ?, duration_minutes = ?,
+        start_time = ?, end_time = ?, total_questions = ?, total_marks = ?, passing_marks = ?,
+        instructions = ?, status = ?, updated_at = ?
+    WHERE id = ?
+  `);
+
+  const res = stmt.run(
+    data.name !== undefined ? data.name.trim() : existing.name,
+    data.code !== undefined ? data.code.trim().toUpperCase() : existing.code,
+    data.subject !== undefined ? data.subject.trim() : existing.subject,
+    data.description !== undefined ? data.description : existing.description,
+    data.duration_minutes !== undefined ? data.duration_minutes : existing.duration_minutes,
+    data.start_time !== undefined ? data.start_time : existing.start_time,
+    data.end_time !== undefined ? data.end_time : existing.end_time,
+    questions.length > 0 ? questions.length : (data.total_questions !== undefined ? data.total_questions : existing.total_questions),
+    questions.length > 0 ? calculatedTotalMarks : (data.total_marks !== undefined ? data.total_marks : existing.total_marks),
+    data.passing_marks !== undefined ? data.passing_marks : existing.passing_marks,
+    data.instructions !== undefined ? data.instructions : existing.instructions,
+    data.status !== undefined ? data.status : existing.status,
+    now,
+    id
+  );
+
+  return res.changes > 0;
+}
+
+export function deleteCollegeExam(id: number): boolean {
+  const stmt = db.prepare(`DELETE FROM college_exams WHERE id = ?`);
+  const res = stmt.run(id);
+  return res.changes > 0;
+}
+
+// ----------------------------------------------------
+// COLLEGE EXAM QUESTIONS DB API
+// ----------------------------------------------------
+
+export interface CollegeExamQuestionRecord {
+  id: number;
+  exam_id: number;
+  question_text: string;
+  question_type: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+  marks: number;
+  explanation: string;
+  order_index: number;
+  created_at: string;
+}
+
+export function getQuestionsByExamId(examId: number): CollegeExamQuestionRecord[] {
+  const stmt = db.prepare(`
+    SELECT * FROM college_exam_questions
+    WHERE exam_id = ?
+    ORDER BY order_index ASC, id ASC
+  `);
+  return stmt.all(examId) as CollegeExamQuestionRecord[];
+}
+
+export function saveQuestionForExam(
+  question: Omit<CollegeExamQuestionRecord, 'id' | 'created_at'> & { id?: number }
+): CollegeExamQuestionRecord {
+  const now = new Date().toISOString();
+  const existing = getQuestionsByExamId(question.exam_id);
+  const maxOrder = existing.length > 0 ? Math.max(...existing.map((q) => q.order_index)) + 1 : 1;
+
+  if (question.id) {
+    const stmt = db.prepare(`
+      UPDATE college_exam_questions
+      SET question_text = ?, question_type = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?,
+          correct_answer = ?, marks = ?, explanation = ?, order_index = ?
+      WHERE id = ? AND exam_id = ?
+    `);
+    stmt.run(
+      question.question_text.trim(),
+      question.question_type || 'Single Choice',
+      question.option_a.trim(),
+      question.option_b.trim(),
+      question.option_c.trim(),
+      question.option_d.trim(),
+      question.correct_answer.toUpperCase().trim(),
+      question.marks || 1,
+      question.explanation || '',
+      question.order_index || maxOrder,
+      question.id,
+      question.exam_id
+    );
+
+    updateCollegeExam(question.exam_id, {});
+    const fetchStmt = db.prepare(`SELECT * FROM college_exam_questions WHERE id = ?`);
+    return fetchStmt.get(question.id) as CollegeExamQuestionRecord;
+  } else {
+    const stmt = db.prepare(`
+      INSERT INTO college_exam_questions (
+        exam_id, question_text, question_type, option_a, option_b, option_c, option_d,
+        correct_answer, marks, explanation, order_index, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const res = stmt.run(
+      question.exam_id,
+      question.question_text.trim(),
+      question.question_type || 'Single Choice',
+      question.option_a.trim(),
+      question.option_b.trim(),
+      question.option_c.trim(),
+      question.option_d.trim(),
+      question.correct_answer.toUpperCase().trim(),
+      question.marks || 1,
+      question.explanation || '',
+      question.order_index || maxOrder,
+      now
+    );
+
+    updateCollegeExam(question.exam_id, {});
+    const fetchStmt = db.prepare(`SELECT * FROM college_exam_questions WHERE id = ?`);
+    return fetchStmt.get(res.lastInsertRowid) as CollegeExamQuestionRecord;
+  }
+}
+
+export function deleteExamQuestion(questionId: number, examId: number): boolean {
+  const stmt = db.prepare(`DELETE FROM college_exam_questions WHERE id = ? AND exam_id = ?`);
+  const res = stmt.run(questionId, examId);
+  if (res.changes > 0) {
+    updateCollegeExam(examId, {});
+    return true;
+  }
+  return false;
+}
+
+export function reorderExamQuestions(examId: number, questionIdsInOrder: number[]): boolean {
+  const stmt = db.prepare(`UPDATE college_exam_questions SET order_index = ? WHERE id = ? AND exam_id = ?`);
+  const updateMany = db.transaction((ids: number[]) => {
+    ids.forEach((qId, index) => {
+      stmt.run(index + 1, qId, examId);
+    });
+  });
+  updateMany(questionIdsInOrder);
+  return true;
+}
+
+// ----------------------------------------------------
+// COLLEGE EXAM ATTEMPTS & RESULTS DB API
+// ----------------------------------------------------
+
+export interface CollegeExamAttemptRecord {
+  id: string;
+  exam_id: number;
+  exam_name?: string;
+  student_id: number;
+  student_name?: string;
+  roll_number?: string;
+  registration_number?: string;
+  email?: string;
+  mobile?: string;
+  department?: string;
+  branch?: string;
+  year?: string;
+  section?: string;
+  college_id: number;
+  college_name?: string;
+  started_at: string;
+  submitted_at: string;
+  time_taken_seconds: number;
+  status: 'In Progress' | 'Submitted' | 'Timed Out';
+  total_questions: number;
+  attempted_count: number;
+  correct_answers: number;
+  incorrect_answers: number;
+  unanswered_answers: number;
+  total_marks: number;
+  obtained_marks: number;
+  percentage: number;
+  result_status: 'PASS' | 'FAIL';
+  answers_json: string;
+  created_at: string;
+}
+
+export function getAttemptsByExamId(
+  examId: number,
+  options?: { search?: string; status?: string; sortBy?: string; sortOrder?: string }
+): CollegeExamAttemptRecord[] {
+  let query = `
+    SELECT cea.*,
+      ce.name as exam_name,
+      cs.name as student_name,
+      cs.roll_number,
+      cs.registration_number,
+      cs.email,
+      cs.mobile,
+      cs.department,
+      cs.branch,
+      cs.year,
+      cs.section,
+      c.name as college_name
+    FROM college_exam_attempts cea
+    JOIN college_exams ce ON ce.id = cea.exam_id
+    JOIN college_students cs ON cs.id = cea.student_id
+    JOIN colleges c ON c.id = cea.college_id
+    WHERE cea.exam_id = ?
+  `;
+  const params: any[] = [examId];
+
+  if (options?.search && options.search.trim() !== '') {
+    const term = `%${options.search.trim().toLowerCase()}%`;
+    query += ` AND (LOWER(cs.name) LIKE ? OR LOWER(cs.roll_number) LIKE ? OR LOWER(cs.email) LIKE ?)`;
+    params.push(term, term, term);
+  }
+
+  if (options?.status && options.status !== 'all') {
+    query += ` AND UPPER(cea.result_status) = ?`;
+    params.push(options.status.toUpperCase());
+  }
+
+  const sortCol = options?.sortBy === 'score' ? 'cea.obtained_marks' : options?.sortBy === 'name' ? 'cs.name' : 'cea.submitted_at';
+  const sortDir = options?.sortOrder === 'asc' ? 'ASC' : 'DESC';
+  query += ` ORDER BY ${sortCol} ${sortDir}`;
+
+  const stmt = db.prepare(query);
+  return stmt.all(...params) as CollegeExamAttemptRecord[];
+}
+
+export function getAttemptById(attemptId: string): CollegeExamAttemptRecord | undefined {
+  const stmt = db.prepare(`
+    SELECT cea.*,
+      ce.name as exam_name,
+      cs.name as student_name,
+      cs.roll_number,
+      cs.registration_number,
+      cs.email,
+      cs.mobile,
+      cs.department,
+      cs.branch,
+      cs.year,
+      cs.section,
+      c.name as college_name
+    FROM college_exam_attempts cea
+    JOIN college_exams ce ON ce.id = cea.exam_id
+    JOIN college_students cs ON cs.id = cea.student_id
+    JOIN colleges c ON c.id = cea.college_id
+    WHERE cea.id = ?
+  `);
+  return stmt.get(attemptId) as CollegeExamAttemptRecord | undefined;
+}
+
+export function getStudentAttemptForExam(examId: number, studentId: number): CollegeExamAttemptRecord | undefined {
+  const stmt = db.prepare(`
+    SELECT * FROM college_exam_attempts
+    WHERE exam_id = ? AND student_id = ?
+    ORDER BY created_at DESC LIMIT 1
+  `);
+  return stmt.get(examId, studentId) as CollegeExamAttemptRecord | undefined;
+}
+
+export function recordExamAttemptStart(data: {
+  exam_id: number;
+  student_id: number;
+  college_id: number;
+}): CollegeExamAttemptRecord {
+  const attemptId = `att_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const now = new Date().toISOString();
+
+  const stmt = db.prepare(`
+    INSERT INTO college_exam_attempts (
+      id, exam_id, student_id, college_id, started_at, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, 'In Progress', ?)
+  `);
+
+  stmt.run(attemptId, data.exam_id, data.student_id, data.college_id, now, now);
+  return getAttemptById(attemptId)!;
+}
+
+export function submitCollegeExamAttempt(
+  attemptId: string,
+  answers: Record<string, string>,
+  timeTakenSeconds: number
+): CollegeExamAttemptRecord | null {
+  const attempt = getAttemptById(attemptId);
+  if (!attempt) return null;
+
+  const questions = getQuestionsByExamId(attempt.exam_id);
+  const exam = getExamById(attempt.exam_id);
+  if (!exam) return null;
+
+  let totalQuestions = questions.length;
+  let attemptedCount = 0;
+  let correctCount = 0;
+  let incorrectCount = 0;
+  let unansweredCount = 0;
+  let obtainedMarks = 0;
+  let totalMarks = exam.total_marks || (totalQuestions * 1);
+
+  questions.forEach((q) => {
+    const qKey = String(q.id);
+    const userAns = (answers[qKey] || '').toUpperCase().trim();
+    if (userAns) {
+      attemptedCount++;
+      if (userAns === q.correct_answer.toUpperCase().trim()) {
+        correctCount++;
+        obtainedMarks += (q.marks || 1);
+      } else {
+        incorrectCount++;
+      }
+    } else {
+      unansweredCount++;
+    }
+  });
+
+  const percentage = totalMarks > 0 ? Math.round(((obtainedMarks / totalMarks) * 100) * 10) / 10 : 0;
+  const resultStatus = obtainedMarks >= (exam.passing_marks || 5) ? 'PASS' : 'FAIL';
+  const now = new Date().toISOString();
+
+  const stmt = db.prepare(`
+    UPDATE college_exam_attempts
+    SET submitted_at = ?, time_taken_seconds = ?, status = 'Submitted',
+        total_questions = ?, attempted_count = ?, correct_answers = ?,
+        incorrect_answers = ?, unanswered_answers = ?, total_marks = ?,
+        obtained_marks = ?, percentage = ?, result_status = ?,
+        answers_json = ?
+    WHERE id = ?
+  `);
+
+  stmt.run(
+    now,
+    timeTakenSeconds,
+    totalQuestions,
+    attemptedCount,
+    correctCount,
+    incorrectCount,
+    unansweredCount,
+    totalMarks,
+    obtainedMarks,
+    percentage,
+    resultStatus,
+    JSON.stringify(answers),
+    attemptId
+  );
+
+  return getAttemptById(attemptId)!;
+}
+
+export function deleteExamAttempt(attemptId: string): boolean {
+  const stmt = db.prepare(`DELETE FROM college_exam_attempts WHERE id = ?`);
+  const res = stmt.run(attemptId);
+  return res.changes > 0;
+}
+
+// ----------------------------------------------------
+// SEED INITIAL COLLEGE FOLDERS IF EMPTY
+// ----------------------------------------------------
+const initialCollegeCount = (db.prepare(`SELECT COUNT(*) as count FROM colleges`).get() as { count: number })?.count || 0;
+if (initialCollegeCount === 0) {
+  const seedCollegesList = [
+    { name: 'KL University', code: 'KLU', description: 'Koneru Lakshmaiah Education Foundation' },
+    { name: 'Vignan University', code: 'VU', description: 'Vignan Foundation for Science, Technology and Research' },
+    { name: 'Acharya Nagarjuna University', code: 'ANU', description: 'State University, Guntur' },
+  ];
+
+  seedCollegesList.forEach((c) => {
+    const createdCollege = createCollege(c);
+    
+    // Seed 3 demo students per college
+    createCollegeStudent({
+      college_id: createdCollege.id,
+      name: 'Manohar Challa',
+      roll_number: '23HT1A0501',
+      registration_number: 'REG2024001',
+      email: 'manohar@student.edu',
+      mobile: '+91 9876543210',
+      department: 'Computer Science',
+      branch: 'CSE',
+      year: '4th Year',
+      section: 'A',
+      gender: 'Male',
+      dob: '2003-05-15',
+      username: '23HT1A0501',
+      password: '123'
+    });
+
+    createCollegeStudent({
+      college_id: createdCollege.id,
+      name: 'Priya Sharma',
+      roll_number: '23HT1A0502',
+      registration_number: 'REG2024002',
+      email: 'priya.s@student.edu',
+      mobile: '+91 9876543211',
+      department: 'Computer Science',
+      branch: 'CSE',
+      year: '4th Year',
+      section: 'A',
+      gender: 'Female',
+      dob: '2003-08-20',
+      username: '23HT1A0502',
+      password: '123'
+    });
+
+    // Seed 1 default published exam per college
+    const createdExam = createCollegeExam({
+      college_id: createdCollege.id,
+      name: 'SAP ABAP Technical Assessment',
+      code: 'SAP-ABAP-101',
+      subject: 'SAP ABAP Programming',
+      description: 'Core evaluation of SAP Dictionary, Internal Tables, Modularization, and Open SQL.',
+      duration_minutes: 30,
+      total_questions: 5,
+      total_marks: 5,
+      passing_marks: 3,
+      instructions: 'Total 5 multiple choice questions. Passing criterion is minimum 3 marks. You have 30 minutes.',
+      status: 'Published',
+    });
+
+    // Seed questions for this exam
+    const sampleQuestions = [
+      {
+        q: 'Which transaction code is commonly used to create, change, and display ABAP programs?',
+        a: 'SE11', b: 'SE38', c: 'SE93', d: 'SM37', correct: 'B', exp: 'SE38 is the ABAP Editor.'
+      },
+      {
+        q: 'Which SAP transaction is primarily used for maintaining Data Dictionary objects?',
+        a: 'SE11', b: 'SE80', c: 'SE38', d: 'ST22', correct: 'A', exp: 'SE11 is the ABAP Data Dictionary.'
+      },
+      {
+        q: 'Which ABAP statement is used to retrieve data from a database table?',
+        a: 'READ', b: 'FETCH', c: 'SELECT', d: 'GET', correct: 'C', exp: 'SELECT executes Open SQL queries.'
+      },
+      {
+        q: 'Which internal table type automatically maintains entries in ascending order by its key?',
+        a: 'STANDARD TABLE', b: 'SORTED TABLE', c: 'HASHED TABLE', d: 'INDEX TABLE', correct: 'B', exp: 'SORTED TABLE is automatically ordered.'
+      },
+      {
+        q: 'Which statement is used to loop through all records of an internal table?',
+        a: 'LOOP AT', b: 'ITERATE', c: 'FOR EACH', d: 'REPEAT', correct: 'A', exp: 'LOOP AT iterates over internal tables.'
+      }
+    ];
+
+    sampleQuestions.forEach((sq, idx) => {
+      saveQuestionForExam({
+        exam_id: createdExam.id,
+        question_text: sq.q,
+        question_type: 'Single Choice',
+        option_a: sq.a,
+        option_b: sq.b,
+        option_c: sq.c,
+        option_d: sq.d,
+        correct_answer: sq.correct,
+        marks: 1,
+        explanation: sq.exp,
+        order_index: idx + 1
+      });
+    });
+  });
+}
+
 export default db;
+
