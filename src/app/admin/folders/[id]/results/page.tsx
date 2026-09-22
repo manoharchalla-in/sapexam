@@ -471,6 +471,42 @@ export default function CollegeResultsFolderPage() {
               </div>
             </div>
 
+            {/* Candidate Submitted Responses Viewer */}
+            {(() => {
+              let parsed: Record<string, string> = {};
+              try {
+                if (viewScorecard.answers_json) {
+                  parsed = typeof viewScorecard.answers_json === 'string' ? JSON.parse(viewScorecard.answers_json) : viewScorecard.answers_json;
+                }
+              } catch (e) {}
+
+              const entries = Object.entries(parsed);
+              if (entries.length === 0) return null;
+
+              return (
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <span className="text-2xs font-black uppercase tracking-wider text-slate-400 block">
+                    Recorded Answers & Responses ({entries.length})
+                  </span>
+                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                    {entries.map(([qId, ans], idx) => (
+                      <div key={qId} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                        <div className="flex items-center justify-between font-bold text-slate-500 text-2xs mb-1">
+                          <span>Item #{idx + 1} (ID: {qId})</span>
+                          <span className="text-indigo-600 font-mono">
+                            {ans && ans.length === 1 && ['A', 'B', 'C', 'D'].includes(ans) ? 'MCQ Choice' : 'Text Answer'}
+                          </span>
+                        </div>
+                        <div className="text-slate-900 font-medium whitespace-pre-wrap font-mono text-[11px] bg-white p-2 rounded-lg border border-slate-200/60">
+                          {ans || '<No response recorded>'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="pt-2 text-right">
               <button
                 onClick={() => setViewScorecard(null)}

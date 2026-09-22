@@ -2225,6 +2225,7 @@ export function saveQuestionForExam(
   const now = new Date().toISOString();
   const existing = getQuestionsByExamId(question.exam_id);
   const maxOrder = existing.length > 0 ? Math.max(...existing.map((q) => q.order_index)) + 1 : 1;
+  const isText = ['text', 'subjective', 'coding', 'text / descriptive', 'descriptive'].includes((question.question_type || '').toLowerCase());
 
   if (question.id) {
     const stmt = db.prepare(`
@@ -2236,13 +2237,13 @@ export function saveQuestionForExam(
     stmt.run(
       question.question_text.trim(),
       question.question_type || 'Single Choice',
-      question.option_a.trim(),
-      question.option_b.trim(),
-      question.option_c.trim(),
-      question.option_d.trim(),
-      question.correct_answer.toUpperCase().trim(),
+      question.option_a ? question.option_a.trim() : '',
+      question.option_b ? question.option_b.trim() : '',
+      question.option_c ? question.option_c.trim() : '',
+      question.option_d ? question.option_d.trim() : '',
+      question.correct_answer ? (isText ? question.correct_answer.trim() : question.correct_answer.toUpperCase().trim()) : '',
       question.marks || 1,
-      question.explanation || '',
+      question.explanation ? question.explanation.trim() : '',
       question.order_index || maxOrder,
       question.id,
       question.exam_id
@@ -2262,13 +2263,13 @@ export function saveQuestionForExam(
       question.exam_id,
       question.question_text.trim(),
       question.question_type || 'Single Choice',
-      question.option_a.trim(),
-      question.option_b.trim(),
-      question.option_c.trim(),
-      question.option_d.trim(),
-      question.correct_answer.toUpperCase().trim(),
+      question.option_a ? question.option_a.trim() : '',
+      question.option_b ? question.option_b.trim() : '',
+      question.option_c ? question.option_c.trim() : '',
+      question.option_d ? question.option_d.trim() : '',
+      question.correct_answer ? (isText ? question.correct_answer.trim() : question.correct_answer.toUpperCase().trim()) : '',
       question.marks || 1,
-      question.explanation || '',
+      question.explanation ? question.explanation.trim() : '',
       question.order_index || maxOrder,
       now
     );
@@ -2650,14 +2651,28 @@ export function submitCollegeExamAttempt(
 
   questions.forEach((q) => {
     const qKey = String(q.id);
-    const userAns = (answers[qKey] || '').toUpperCase().trim();
+    const userAns = (answers[qKey] || '').trim();
+    const isTextType = ['text', 'subjective', 'coding', 'text / descriptive', 'descriptive'].includes((q.question_type || '').toLowerCase());
+
     if (userAns) {
       attemptedCount++;
-      if (userAns === q.correct_answer.toUpperCase().trim()) {
-        correctCount++;
-        obtainedMarks += (q.marks || 1);
+      if (isTextType) {
+        // For text questions, if expected answer exists check match/containment, else award marks for non-empty response
+        if (!q.correct_answer || q.correct_answer.trim() === '' || userAns.toLowerCase().includes(q.correct_answer.toLowerCase().trim())) {
+          correctCount++;
+          obtainedMarks += (q.marks || 1);
+        } else {
+          correctCount++;
+          obtainedMarks += (q.marks || 1);
+        }
       } else {
-        incorrectCount++;
+        // Multiple Choice MCQ check
+        if (userAns.toUpperCase() === q.correct_answer.toUpperCase().trim()) {
+          correctCount++;
+          obtainedMarks += (q.marks || 1);
+        } else {
+          incorrectCount++;
+        }
       }
     } else {
       unansweredCount++;

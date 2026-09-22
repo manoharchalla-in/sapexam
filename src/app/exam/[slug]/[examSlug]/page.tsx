@@ -495,7 +495,7 @@ export default function CollegeExamTakerPage() {
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                   <HelpCircle className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
                   <span className="text-2xs text-slate-400 block font-bold">Questions</span>
-                  <strong className="text-xs text-slate-900 font-black">{exam?.total_questions} MCQs</strong>
+                  <strong className="text-xs text-slate-900 font-black">{exam?.total_questions} Questions</strong>
                 </div>
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
                   <Award className="w-4 h-4 text-amber-500 mx-auto mb-1" />
@@ -580,6 +580,11 @@ export default function CollegeExamTakerPage() {
                       <span className="px-3 py-1 rounded-xl text-xs font-black bg-blue-50 text-blue-700 border border-blue-100">
                         Question {currentIndex + 1} of {questions.length}
                       </span>
+                      <span className="text-2xs font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">
+                        {currentQ.question_type === 'Text' || currentQ.question_type === 'Subjective' || currentQ.question_type === 'Coding' || (!currentQ.option_a && !currentQ.option_b)
+                          ? '📝 Text / Descriptive'
+                          : '🔘 Multiple Choice'}
+                      </span>
                       <span className="text-2xs font-bold text-slate-400">
                         ({currentQ.marks} {currentQ.marks === 1 ? 'Mark' : 'Marks'})
                       </span>
@@ -603,37 +608,66 @@ export default function CollegeExamTakerPage() {
                   </h3>
                 </div>
 
-                {/* Multiple Choice Options */}
-                <div className="space-y-3">
-                  {[
-                    { key: 'A', text: currentQ.option_a },
-                    { key: 'B', text: currentQ.option_b },
-                    { key: 'C', text: currentQ.option_c },
-                    { key: 'D', text: currentQ.option_d },
-                  ].map((opt) => {
-                    const isSelected = currentAns === opt.key;
-                    return (
-                      <button
-                        key={opt.key}
-                        onClick={() => handleSelectOption(opt.key)}
-                        className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center space-x-3.5 ${
-                          isSelected
-                            ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold shadow-xs ring-2 ring-blue-500/20'
-                            : 'bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800'
-                        }`}
-                      >
-                        <div
-                          className={`w-7 h-7 rounded-xl flex items-center justify-center font-mono text-xs font-black shrink-0 transition-colors ${
-                            isSelected ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600'
+                {/* Conditional Question Body: MCQ vs Text */}
+                {currentQ.question_type === 'Text' || currentQ.question_type === 'Subjective' || currentQ.question_type === 'Coding' || (!currentQ.option_a && !currentQ.option_b) ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-2xs font-bold text-slate-500">
+                      <span className="flex items-center space-x-1 text-indigo-700">
+                        <span>📝 Type your comprehensive response / code below:</span>
+                      </span>
+                      <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                        {(currentAns || '').length} characters
+                      </span>
+                    </div>
+                    <textarea
+                      value={currentAns || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAnswers((prev) => ({
+                          ...prev,
+                          [currentQ.id.toString()]: val,
+                        }));
+                      }}
+                      placeholder="Write your detailed answer, explanation, or code implementation here..."
+                      rows={8}
+                      className="w-full p-4 rounded-2xl border border-slate-300/80 bg-white font-mono text-xs sm:text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all resize-y shadow-2xs"
+                    />
+                    <p className="text-[11px] text-slate-400 flex items-center space-x-1">
+                      <span>💡 Your typed answer is continuously preserved in your session.</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {[
+                      { key: 'A', text: currentQ.option_a },
+                      { key: 'B', text: currentQ.option_b },
+                      { key: 'C', text: currentQ.option_c },
+                      { key: 'D', text: currentQ.option_d },
+                    ].map((opt) => {
+                      const isSelected = currentAns === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          onClick={() => handleSelectOption(opt.key)}
+                          className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center space-x-3.5 ${
+                            isSelected
+                              ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold shadow-xs ring-2 ring-blue-500/20'
+                              : 'bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800'
                           }`}
                         >
-                          {opt.key}
-                        </div>
-                        <span className="text-xs sm:text-sm font-medium flex-1">{opt.text}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                          <div
+                            className={`w-7 h-7 rounded-xl flex items-center justify-center font-mono text-xs font-black shrink-0 transition-colors ${
+                              isSelected ? 'bg-blue-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {opt.key}
+                          </div>
+                          <span className="text-xs sm:text-sm font-medium flex-1">{opt.text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Navigation Buttons */}
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -711,7 +745,7 @@ export default function CollegeExamTakerPage() {
               {/* Grid Palette */}
               <div className="grid grid-cols-5 gap-2 max-h-64 overflow-y-auto pr-1">
                 {questions.map((q, idx) => {
-                  const isAns = !!answers[q.id.toString()];
+                  const isAns = !!(answers[q.id.toString()] && answers[q.id.toString()].trim().length > 0);
                   const isCurrent = currentIndex === idx;
                   const isMarked = !!bookmarked[idx];
 

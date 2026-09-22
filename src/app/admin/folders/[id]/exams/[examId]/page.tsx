@@ -23,6 +23,8 @@ import {
   Building2,
   ChevronRight,
   ExternalLink,
+  AlignLeft,
+  ListChecks,
 } from 'lucide-react';
 
 interface CollegeExam {
@@ -74,6 +76,7 @@ export default function ExamPaperDetailPage() {
 
   // Question Modal
   const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+  const [questionType, setQuestionType] = useState<'Single Choice' | 'Text'>('Single Choice');
   const [questionForm, setQuestionForm] = useState({
     id: undefined as number | undefined,
     question_text: '',
@@ -140,16 +143,57 @@ export default function ExamPaperDetailPage() {
     }
   };
 
+  const handleOpenAddModal = () => {
+    setQuestionType('Single Choice');
+    setQuestionForm({
+      id: undefined,
+      question_text: '',
+      question_type: 'Single Choice',
+      option_a: '',
+      option_b: '',
+      option_c: '',
+      option_d: '',
+      correct_answer: 'A',
+      marks: 1,
+      explanation: '',
+    });
+    setIsQuestionModalOpen(true);
+  };
+
+  const handleOpenEditModal = (q: Question) => {
+    const isText = ['text', 'subjective', 'coding', 'text / descriptive', 'descriptive'].includes((q.question_type || '').toLowerCase());
+    const resolvedType = isText ? 'Text' : 'Single Choice';
+    setQuestionType(resolvedType);
+    setQuestionForm({
+      id: q.id,
+      question_text: q.question_text,
+      question_type: resolvedType,
+      option_a: q.option_a || '',
+      option_b: q.option_b || '',
+      option_c: q.option_c || '',
+      option_d: q.option_d || '',
+      correct_answer: q.correct_answer || (isText ? '' : 'A'),
+      marks: q.marks || 1,
+      explanation: q.explanation || '',
+    });
+    setIsQuestionModalOpen(true);
+  };
+
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!questionForm.question_text.trim()) return;
     setSavingQuestion(true);
 
     try {
+      const payload = {
+        ...questionForm,
+        question_type: questionType,
+      };
+
       const res = await fetch(`/api/admin/folders/colleges/${collegeId}/exams/${examId}/questions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(questionForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success) {
@@ -382,26 +426,12 @@ export default function ExamPaperDetailPage() {
                   <span>Exam Paper Questions ({questions.length})</span>
                 </h3>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Construct and manage multiple-choice questions for this examination paper.
+                  Create and manage Multiple Choice (MCQ) & Text / Coding questions for this examination paper.
                 </p>
               </div>
 
               <button
-                onClick={() => {
-                  setQuestionForm({
-                    id: undefined,
-                    question_text: '',
-                    question_type: 'Single Choice',
-                    option_a: '',
-                    option_b: '',
-                    option_c: '',
-                    option_d: '',
-                    correct_answer: 'A',
-                    marks: 1,
-                    explanation: '',
-                  });
-                  setIsQuestionModalOpen(true);
-                }}
+                onClick={handleOpenAddModal}
                 className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl flex items-center space-x-1.5 shadow-sm"
               >
                 <Plus className="w-4 h-4" />
@@ -416,10 +446,10 @@ export default function ExamPaperDetailPage() {
                 </div>
                 <p className="text-sm font-bold text-slate-700">No Questions Added to this Paper Yet</p>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Click "+ Add Question" to start building this exam paper with multiple choice options and answer keys.
+                  Click "+ Add Question" to start adding Multiple Choice (MCQ) or Text / Descriptive questions.
                 </p>
                 <button
-                  onClick={() => setIsQuestionModalOpen(true)}
+                  onClick={handleOpenAddModal}
                   className="glossy-button-primary text-white text-xs font-black px-4 py-2.5 rounded-xl inline-flex items-center space-x-1.5 shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
@@ -428,122 +458,175 @@ export default function ExamPaperDetailPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {questions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    className="glossy-card rounded-2xl p-5 border border-slate-200/90 space-y-3 hover:border-indigo-300 transition-all shadow-2xs"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start space-x-3">
-                        <span className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-700 font-black text-xs flex items-center justify-center shrink-0 border border-indigo-100">
-                          Q{idx + 1}
-                        </span>
-                        <div>
-                          <h4 className="text-xs font-black text-slate-900 leading-relaxed">
-                            {q.question_text}
-                          </h4>
-                          <span className="text-[10px] font-bold text-slate-400">
-                            {q.marks || 1} Mark{q.marks !== 1 ? 's' : ''} • Single Choice
+                {questions.map((q, idx) => {
+                  const isTextType = ['text', 'subjective', 'coding', 'text / descriptive', 'descriptive'].includes((q.question_type || '').toLowerCase());
+                  return (
+                    <div
+                      key={q.id}
+                      className="glossy-card rounded-2xl p-5 border border-slate-200/90 space-y-3 hover:border-indigo-300 transition-all shadow-2xs"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start space-x-3">
+                          <span className="w-7 h-7 rounded-xl bg-indigo-50 text-indigo-700 font-black text-xs flex items-center justify-center shrink-0 border border-indigo-100">
+                            Q{idx + 1}
                           </span>
+                          <div>
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${
+                                  isTextType
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                                }`}
+                              >
+                                {isTextType ? '📝 Text / Descriptive' : '🔘 Multiple Choice (MCQ)'}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400">
+                                {q.marks || 1} Mark{q.marks !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+
+                            <h4 className="text-xs font-black text-slate-900 leading-relaxed whitespace-pre-line">
+                              {q.question_text}
+                            </h4>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-1 shrink-0">
+                          <button
+                            onClick={() => handleOpenEditModal(q)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Question"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget({ type: 'question', id: q.id, name: `Question #${idx + 1}` })}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Delete Question"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-1 shrink-0">
-                        <button
-                          onClick={() => {
-                            setQuestionForm({
-                              id: q.id,
-                              question_text: q.question_text,
-                              question_type: q.question_type,
-                              option_a: q.option_a,
-                              option_b: q.option_b,
-                              option_c: q.option_c,
-                              option_d: q.option_d,
-                              correct_answer: q.correct_answer,
-                              marks: q.marks,
-                              explanation: q.explanation,
-                            });
-                            setIsQuestionModalOpen(true);
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit Question"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget({ type: 'question', id: q.id, name: `Question #${idx + 1}` })}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="Delete Question"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                      {/* Render Multiple Choice Options OR Text Indicator */}
+                      {!isTextType ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                          {[
+                            { key: 'A', text: q.option_a },
+                            { key: 'B', text: q.option_b },
+                            { key: 'C', text: q.option_c },
+                            { key: 'D', text: q.option_d },
+                          ].map((opt) => {
+                            const isCorrect = q.correct_answer.toUpperCase() === opt.key;
+                            return (
+                              <div
+                                key={opt.key}
+                                className={`p-2.5 rounded-xl border flex items-center space-x-2.5 ${
+                                  isCorrect
+                                    ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950 font-bold'
+                                    : 'bg-slate-50/70 border-slate-200/80 text-slate-700'
+                                }`}
+                              >
+                                <span
+                                  className={`w-5 h-5 rounded-lg text-2xs font-black flex items-center justify-center ${
+                                    isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
+                                  }`}
+                                >
+                                  {opt.key}
+                                </span>
+                                <span className="truncate">{opt.text}</span>
+                                {isCorrect && (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 ml-auto shrink-0" />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100/80 space-y-1.5 text-xs">
+                          <span className="text-[10px] font-extrabold uppercase text-purple-700 tracking-wider">
+                            Student Response Format:
+                          </span>
+                          <p className="text-slate-600 font-medium">
+                            Students will receive an interactive textarea / code editor to type their answer.
+                          </p>
+                          {q.correct_answer && (
+                            <p className="text-[11px] text-purple-900 bg-white p-2 rounded-lg border border-purple-200/70">
+                              <strong>Expected Solution / Key:</strong> {q.correct_answer}
+                            </p>
+                          )}
+                        </div>
+                      )}
 
-                    {/* Options Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-                      {[
-                        { key: 'A', text: q.option_a },
-                        { key: 'B', text: q.option_b },
-                        { key: 'C', text: q.option_c },
-                        { key: 'D', text: q.option_d },
-                      ].map((opt) => {
-                        const isCorrect = q.correct_answer.toUpperCase() === opt.key;
-                        return (
-                          <div
-                            key={opt.key}
-                            className={`p-2.5 rounded-xl border flex items-center space-x-2.5 ${
-                              isCorrect
-                                ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950 font-bold'
-                                : 'bg-slate-50/70 border-slate-200/80 text-slate-700'
-                            }`}
-                          >
-                            <span
-                              className={`w-5 h-5 rounded-lg text-2xs font-black flex items-center justify-center ${
-                                isCorrect ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
-                              }`}
-                            >
-                              {opt.key}
-                            </span>
-                            <span className="truncate">{opt.text}</span>
-                            {isCorrect && (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 ml-auto shrink-0" />
-                            )}
-                          </div>
-                        );
-                      })}
+                      {q.explanation && (
+                        <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-medium">
+                          💡 <strong className="text-slate-700">Explanation:</strong> {q.explanation}
+                        </p>
+                      )}
                     </div>
-
-                    {q.explanation && (
-                      <p className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 font-medium">
-                        💡 <strong className="text-slate-700">Explanation:</strong> {q.explanation}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
       </main>
 
-      {/* ADD / EDIT QUESTION MODAL */}
+      {/* ADD / EDIT QUESTION MODAL (SUPPORTS BOTH MCQ AND TEXT) */}
       {isQuestionModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="w-full max-w-xl glossy-card rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
             <div className="p-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-2.5">
                 <FileCode className="w-5 h-5 text-white" />
-                <h3 className="text-base font-black">
-                  {questionForm.id ? 'Edit Question' : 'Add MCQ Question'}
-                </h3>
+                <div>
+                  <h3 className="text-base font-black">
+                    {questionForm.id ? 'Edit Question' : 'Add Question'}
+                  </h3>
+                  <p className="text-[11px] text-blue-100 font-medium">
+                    Add Multiple Choice (MCQ) or Text / Coding questions
+                  </p>
+                </div>
               </div>
               <button onClick={() => setIsQuestionModalOpen(false)} className="p-1 text-white/80 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
+            {/* Question Type Segmented Switcher */}
+            <div className="p-3 bg-slate-100 border-b border-slate-200/80 flex items-center justify-center space-x-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setQuestionType('Single Choice')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1.5 transition-all ${
+                  questionType === 'Single Choice'
+                    ? 'bg-white text-blue-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <ListChecks className="w-3.5 h-3.5 text-blue-600" />
+                <span>🔘 Multiple Choice (MCQ)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setQuestionType('Text')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-black flex items-center space-x-1.5 transition-all ${
+                  questionType === 'Text'
+                    ? 'bg-white text-purple-700 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <AlignLeft className="w-3.5 h-3.5 text-purple-600" />
+                <span>📝 Text / Descriptive / Coding</span>
+              </button>
+            </div>
+
             <form onSubmit={handleSaveQuestion} className="p-6 space-y-4 overflow-y-auto flex-1">
+              {/* Question Text */}
               <div>
                 <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                   Question Text <span className="text-rose-500">*</span>
@@ -552,55 +635,93 @@ export default function ExamPaperDetailPage() {
                   value={questionForm.question_text}
                   onChange={(e) => setQuestionForm({ ...questionForm, question_text: e.target.value })}
                   rows={3}
-                  placeholder="Enter the complete question here..."
+                  placeholder={
+                    questionType === 'Single Choice'
+                      ? 'Enter the complete multiple choice question here...'
+                      : 'Enter the descriptive question, problem statement, or coding prompt...'
+                  }
                   className="w-full px-3.5 py-2.5 rounded-xl text-xs font-bold glossy-input text-slate-900"
                   required
                 />
               </div>
 
-              <div className="space-y-2.5">
-                <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700">
-                  Multiple Choice Options (A - D) <span className="text-rose-500">*</span>
-                </label>
-
-                {[
-                  { key: 'A', field: 'option_a' },
-                  { key: 'B', field: 'option_b' },
-                  { key: 'C', field: 'option_c' },
-                  { key: 'D', field: 'option_d' },
-                ].map((opt) => (
-                  <div key={opt.key} className="flex items-center space-x-2">
-                    <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center shrink-0 border border-slate-200">
-                      {opt.key}
-                    </span>
-                    <input
-                      type="text"
-                      value={(questionForm as any)[opt.field]}
-                      onChange={(e) => setQuestionForm({ ...questionForm, [opt.field]: e.target.value })}
-                      placeholder={`Option ${opt.key} text`}
-                      className="w-full px-3 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
-                      required
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
-                    Correct Answer <span className="text-rose-500">*</span>
+              {/* MCQ Options A - D (Only if Multiple Choice) */}
+              {questionType === 'Single Choice' && (
+                <div className="space-y-2.5">
+                  <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700">
+                    Multiple Choice Options (A - D) <span className="text-rose-500">*</span>
                   </label>
-                  <select
+
+                  {[
+                    { key: 'A', field: 'option_a' },
+                    { key: 'B', field: 'option_b' },
+                    { key: 'C', field: 'option_c' },
+                    { key: 'D', field: 'option_d' },
+                  ].map((opt) => (
+                    <div key={opt.key} className="flex items-center space-x-2">
+                      <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center shrink-0 border border-slate-200">
+                        {opt.key}
+                      </span>
+                      <input
+                        type="text"
+                        value={(questionForm as any)[opt.field]}
+                        onChange={(e) => setQuestionForm({ ...questionForm, [opt.field]: e.target.value })}
+                        placeholder={`Option ${opt.key} text`}
+                        className="w-full px-3 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
+                        required
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Text / Descriptive Question Expected Key / Solution (Optional) */}
+              {questionType === 'Text' && (
+                <div className="space-y-1">
+                  <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700">
+                    Expected Solution / Reference Keywords (Optional)
+                  </label>
+                  <textarea
                     value={questionForm.correct_answer}
                     onChange={(e) => setQuestionForm({ ...questionForm, correct_answer: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs font-black glossy-input text-emerald-700 bg-emerald-50/50"
-                  >
-                    <option value="A">Option A</option>
-                    <option value="B">Option B</option>
-                    <option value="C">Option C</option>
-                    <option value="D">Option D</option>
-                  </select>
+                    rows={2}
+                    placeholder="Enter expected keywords, reference answer, or solution guidelines..."
+                    className="w-full px-3.5 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    Students will type their answer freely. This reference key helps during review.
+                  </p>
                 </div>
+              )}
+
+              {/* Correct Answer & Marks Awarded Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {questionType === 'Single Choice' ? (
+                  <div>
+                    <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                      Correct Answer <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={questionForm.correct_answer}
+                      onChange={(e) => setQuestionForm({ ...questionForm, correct_answer: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl text-xs font-black glossy-input text-emerald-700 bg-emerald-50/50"
+                    >
+                      <option value="A">Option A</option>
+                      <option value="B">Option B</option>
+                      <option value="C">Option C</option>
+                      <option value="D">Option D</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                      Question Type
+                    </label>
+                    <div className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                      📝 Text / Descriptive
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
@@ -616,6 +737,7 @@ export default function ExamPaperDetailPage() {
                 </div>
               </div>
 
+              {/* Explanation */}
               <div>
                 <label className="block text-2xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                   Explanation / Reference (Optional)
@@ -624,11 +746,12 @@ export default function ExamPaperDetailPage() {
                   type="text"
                   value={questionForm.explanation}
                   onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                  placeholder="Optional technical rationale..."
+                  placeholder="Optional technical rationale or grading notes..."
                   className="w-full px-3.5 py-2 rounded-xl text-xs font-medium glossy-input text-slate-900"
                 />
               </div>
 
+              {/* Submit Buttons */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
                 <button
                   type="button"

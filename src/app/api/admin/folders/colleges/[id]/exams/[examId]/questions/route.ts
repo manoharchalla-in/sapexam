@@ -53,23 +53,28 @@ export async function POST(
     if (!body.question_text || !body.question_text.trim()) {
       return NextResponse.json({ success: false, message: 'Question Text is required' }, { status: 400 });
     }
-    if (!body.option_a || !body.option_b || !body.option_c || !body.option_d) {
-      return NextResponse.json({ success: false, message: 'All 4 options (A, B, C, D) are required' }, { status: 400 });
-    }
-    if (!body.correct_answer) {
-      return NextResponse.json({ success: false, message: 'Correct Answer is required (A, B, C, or D)' }, { status: 400 });
+    const questionType = body.question_type || 'Single Choice';
+    const isTextType = ['text', 'subjective', 'coding', 'text / descriptive', 'descriptive'].includes(questionType.toLowerCase());
+
+    if (!isTextType) {
+      if (!body.option_a || !body.option_b || !body.option_c || !body.option_d) {
+        return NextResponse.json({ success: false, message: 'All 4 options (A, B, C, D) are required for Multiple Choice questions' }, { status: 400 });
+      }
+      if (!body.correct_answer) {
+        return NextResponse.json({ success: false, message: 'Correct Answer is required (A, B, C, or D) for Multiple Choice questions' }, { status: 400 });
+      }
     }
 
     const saved = saveQuestionForExam({
       id: body.id ? parseInt(body.id, 10) : undefined,
       exam_id: examId,
       question_text: body.question_text.trim(),
-      question_type: body.question_type || 'Single Choice',
-      option_a: body.option_a.trim(),
-      option_b: body.option_b.trim(),
-      option_c: body.option_c.trim(),
-      option_d: body.option_d.trim(),
-      correct_answer: body.correct_answer.trim().toUpperCase(),
+      question_type: questionType,
+      option_a: body.option_a ? body.option_a.trim() : '',
+      option_b: body.option_b ? body.option_b.trim() : '',
+      option_c: body.option_c ? body.option_c.trim() : '',
+      option_d: body.option_d ? body.option_d.trim() : '',
+      correct_answer: body.correct_answer ? (isTextType ? body.correct_answer.trim() : body.correct_answer.trim().toUpperCase()) : '',
       marks: parseFloat(body.marks || '1'),
       explanation: body.explanation?.trim() || '',
       order_index: body.order_index ? parseInt(body.order_index, 10) : 1,
