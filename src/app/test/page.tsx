@@ -229,32 +229,37 @@ export default function AssessmentTestPage() {
   const progressBarAscii = '█'.repeat(filledBlocks) + '░'.repeat(10 - filledBlocks);
 
   return (
-    <main className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col justify-between">
-      {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <main className="min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(14,165,233,0.08),rgba(255,255,255,0.98))] flex flex-col font-sans text-slate-800">
+      {/* Top Banner Header */}
+      <header className="glossy-header py-4 px-4 sm:px-6 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3.5">
-            <AppLogo size="sm" />
+            <div className="p-1.5 bg-white rounded-xl shadow-2xs border border-slate-100">
+              <AppLogo size="md" />
+            </div>
             <div>
-              <h1 className="text-base font-black text-slate-900 leading-tight">
-                {session?.paperTitle || paperTitle || 'Skill Assessment'}
+              <h1 className="text-base font-black text-slate-950 tracking-tight flex items-center space-x-2">
+                <span>{session?.paperTitle || paperTitle || 'Skill Assessment'}</span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-extrabold uppercase">
+                  Exam Session
+                </span>
               </h1>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-0.5 font-medium">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-0.5 font-medium">
                 <span className="flex items-center space-x-1">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  <strong className="text-slate-700">{session?.name}</strong>
+                  <User className="w-3.5 h-3.5 text-blue-600" />
+                  <strong className="text-slate-800">{session?.name}</strong>
                 </span>
                 <span className="flex items-center space-x-1">
                   <Mail className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{session?.email}</span>
+                  <span className="text-slate-600 font-mono text-[11px]">{session?.email}</span>
                 </span>
                 {session?.campusName && (
-                  <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 text-[11px]">
-                    Campus: {session.campusName}
+                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-extrabold border border-blue-200 text-[10px]">
+                    {session.campusName}
                   </span>
                 )}
                 {session?.trainerName && (
-                  <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 text-[11px]">
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-extrabold border border-indigo-200 text-[10px]">
                     Trainer: {session.trainerName}
                   </span>
                 )}
@@ -264,27 +269,27 @@ export default function AssessmentTestPage() {
 
           <div className="flex items-center space-x-4 border-t md:border-t-0 pt-2 md:pt-0 border-slate-100">
             {secondsRemaining !== null && (
-              <div className="bg-amber-50 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-xl font-mono text-xs font-black flex items-center space-x-1.5 shadow-xs">
+              <div className="bg-amber-50/90 text-amber-900 border border-amber-300/80 px-3.5 py-1.5 rounded-xl font-mono text-xs font-black flex items-center space-x-2 shadow-2xs">
                 <Clock className="w-4 h-4 text-amber-600 animate-pulse" />
                 <span>
-                  TIME REMAINING: {Math.floor(secondsRemaining / 60).toString().padStart(2, '0')}:{(secondsRemaining % 60).toString().padStart(2, '0')}
+                  {Math.floor(secondsRemaining / 60).toString().padStart(2, '0')}:{(secondsRemaining % 60).toString().padStart(2, '0')}
                 </span>
               </div>
             )}
 
             <div className="text-right">
-              <div className="text-xs font-bold text-slate-700">
-                Question {currentIndex + 1} of {totalQuestions}
+              <div className="text-xs font-black text-slate-800">
+                Question {currentIndex + 1} <span className="text-slate-400 font-normal">/ {totalQuestions}</span>
               </div>
-              <div className="text-xs text-slate-500 font-mono tracking-wider mt-0.5">
-                {progressBarAscii} {progressPercent}%
+              <div className="text-[11px] text-blue-600 font-bold mt-0.5">
+                {progressPercent}% Complete
               </div>
             </div>
-            <div className="w-32 bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner hidden sm:block">
+            <div className="w-28 bg-slate-200/80 rounded-full h-2.5 overflow-hidden shadow-inner hidden sm:block">
               <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 to-sky-500 h-2.5 rounded-full transition-all duration-300 shadow-xs"
                 style={{ width: `${progressPercent}%` }}
-              ></div>
+              />
             </div>
           </div>
         </div>
@@ -293,14 +298,14 @@ export default function AssessmentTestPage() {
       {/* Main Container */}
       <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex-1">
         {/* Question Navigator */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+        <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs mb-6">
+          <div className="flex items-center justify-between mb-3.5">
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
               <HelpCircle className="w-4 h-4 text-blue-600" />
-              <span>Question Navigator</span>
+              <span>Question Palette</span>
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              Answered: <strong className="text-blue-600">{answeredCount}</strong> / {totalQuestions}
+              Answered: <strong className="text-blue-600 font-extrabold">{answeredCount}</strong> / {totalQuestions}
             </span>
           </div>
 
@@ -309,18 +314,18 @@ export default function AssessmentTestPage() {
               const isCurrent = idx === currentIndex;
               const isAnswered = Boolean(userAnswers[q.id]);
 
-              let btnClass = 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200';
+              let btnClass = 'bg-slate-100/80 text-slate-600 hover:bg-slate-200 border-slate-200/90';
               if (isCurrent) {
-                btnClass = 'bg-blue-600 text-white font-bold ring-2 ring-blue-400 ring-offset-1 border-blue-600 shadow-xs';
+                btnClass = 'bg-blue-600 text-white font-black ring-2 ring-blue-400 ring-offset-1 border-blue-600 shadow-sm';
               } else if (isAnswered) {
-                btnClass = 'bg-emerald-100 text-emerald-800 font-semibold border-emerald-300';
+                btnClass = 'bg-emerald-50 text-emerald-800 font-black border-emerald-300 shadow-2xs';
               }
 
               return (
                 <button
                   key={q.id}
                   onClick={() => handleJumpToQuestion(idx)}
-                  className={`h-9 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center ${btnClass}`}
+                  className={`h-9 rounded-xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center ${btnClass}`}
                   title={`Question ${idx + 1} (${isAnswered ? 'Answered' : 'Unanswered'})`}
                 >
                   {idx + 1}
@@ -331,19 +336,19 @@ export default function AssessmentTestPage() {
         </div>
 
         {/* Question Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+        <div className="glossy-card rounded-3xl border border-slate-200/80 shadow-md overflow-hidden">
+          <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex items-center justify-between">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-blue-50 text-blue-800 border border-blue-200">
               Question {currentIndex + 1} of {totalQuestions}
             </span>
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-bold text-slate-500">
               {userAnswers[currentQ.id] ? (
-                <span className="text-emerald-600 flex items-center space-x-1">
-                  <CheckCircle2 className="w-4 h-4 inline" />
+                <span className="text-emerald-600 flex items-center space-x-1 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 inline text-emerald-600" />
                   <span>Answer Selected</span>
                 </span>
               ) : (
-                <span className="text-amber-600 font-medium">Unanswered</span>
+                <span className="text-amber-700 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">Unanswered</span>
               )}
             </span>
           </div>
@@ -370,11 +375,11 @@ export default function AssessmentTestPage() {
             />
           </div>
 
-          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+          <div className="bg-slate-50/80 px-6 py-4 border-t border-slate-200/80 flex items-center justify-between">
             <button
               onClick={handlePrev}
               disabled={currentIndex === 0}
-              className="inline-flex items-center space-x-1 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 font-bold text-sm hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center space-x-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Previous</span>
@@ -383,15 +388,15 @@ export default function AssessmentTestPage() {
             {currentIndex < totalQuestions - 1 ? (
               <button
                 onClick={handleNext}
-                className="inline-flex items-center space-x-1 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-all shadow-xs"
+                className="inline-flex items-center space-x-1.5 px-6 py-2.5 rounded-xl glossy-button-primary text-xs font-bold transition-all shadow-sm uppercase tracking-wider"
               >
-                <span>Next</span>
+                <span>Next Question</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={() => setShowSubmitModal(true)}
-                className="inline-flex items-center space-x-1 px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all shadow-md"
+                className="inline-flex items-center space-x-1.5 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs transition-all shadow-md uppercase tracking-wider"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Submit Assessment</span>
@@ -403,28 +408,28 @@ export default function AssessmentTestPage() {
 
       {/* Submit Modal */}
       {showSubmitModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm">
+          <div className="glossy-card rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-slate-200/80 bg-white">
             <div className="flex items-center space-x-3 mb-4 text-slate-900">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100 shadow-2xs">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-xl font-bold">Submit Assessment?</h3>
+                <h3 className="text-lg font-black text-slate-950">Submit Assessment?</h3>
                 <p className="text-xs text-slate-500 font-medium">Final Confirmation</p>
               </div>
             </div>
 
-            <p className="text-sm text-slate-600 leading-relaxed mb-4">
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
               You have answered <strong className="text-slate-900 font-bold">{answeredCount} of {totalQuestions}</strong> questions.
               {unansweredCount > 0 && (
-                <span className="block mt-2 font-semibold text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200 text-xs">
+                <span className="block mt-2 font-bold text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-xs">
                   ⚠️ Note: You have {unansweredCount} unanswered {unansweredCount === 1 ? 'question' : 'questions'}.
                 </span>
               )}
             </p>
-            <p className="text-xs text-slate-500 mb-6">
-              Once submitted, your answers cannot be changed.
+            <p className="text-[11px] text-slate-400 mb-6">
+              Once submitted, your answers will be securely graded and saved to your scorecard.
             </p>
 
             {submitError && (
@@ -440,16 +445,16 @@ export default function AssessmentTestPage() {
                   if (!isSubmitting) setShowSubmitModal(false);
                 }}
                 disabled={isSubmitting}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-100 disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 disabled:opacity-50 transition-all"
               >
-                Cancel
+                Cancel & Review
               </button>
 
               <button
                 type="button"
                 onClick={() => handleConfirmSubmit(false)}
                 disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md flex items-center space-x-2 disabled:opacity-70"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black shadow-md flex items-center space-x-2 disabled:opacity-70 uppercase tracking-wider"
               >
                 {isSubmitting ? (
                   <>
@@ -457,7 +462,7 @@ export default function AssessmentTestPage() {
                     <span>Submitting...</span>
                   </>
                 ) : (
-                  <span>Submit Assessment</span>
+                  <span>Confirm Submission</span>
                 )}
               </button>
             </div>
@@ -466,7 +471,7 @@ export default function AssessmentTestPage() {
       )}
 
       {/* Footer */}
-      <footer className="py-3 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+      <footer className="py-3 text-center text-xs text-slate-500 border-t border-slate-200/80 bg-white/80 backdrop-blur-xs">
         © {new Date().getFullYear()} {session?.paperTitle || paperTitle || 'Skill Assessment System'}. All rights reserved.
       </footer>
     </main>

@@ -264,19 +264,19 @@ export default function AdminResultsPage() {
   if (authError) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-50/70 font-sans text-slate-800">
       <AdminSidebar />
       <div className="lg:pl-64 flex flex-col min-h-screen min-w-0">
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 py-4 px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+        <header className="glossy-header py-4 px-6 md:px-8 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 shrink-0">
+            <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 shrink-0 shadow-2xs">
               <Award className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-base font-black text-slate-950 leading-tight flex items-center space-x-2">
                 <span>Assessment Results & Scorecards</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-extrabold uppercase">
                   Official Grade Ledger
                 </span>
               </h1>
@@ -291,7 +291,7 @@ export default function AdminResultsPage() {
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
-                className="inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-xs"
+                className="inline-flex items-center space-x-1.5 glossy-button-primary text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Results</span>
@@ -299,32 +299,32 @@ export default function AdminResultsPage() {
               </button>
 
               {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-40 text-xs text-slate-700 animate-in fade-in slide-in-from-top-1">
+                <div className="absolute right-0 mt-2 w-52 glossy-card rounded-2xl shadow-xl border border-slate-200/90 py-2 z-40 text-xs text-slate-700 animate-in fade-in slide-in-from-top-1 bg-white">
                   <button
                     onClick={() => handleExport('csv')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-medium"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-bold"
                   >
                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                     <span>Export CSV (.csv)</span>
                   </button>
                   <button
                     onClick={() => handleExport('excel')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-medium"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-bold"
                   >
                     <FileSpreadsheet className="w-4 h-4 text-blue-600" />
                     <span>Export Excel (.xls)</span>
                   </button>
                   <button
                     onClick={() => handleExport('json')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-medium"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-bold"
                   >
                     <FileJson className="w-4 h-4 text-amber-600" />
                     <span>Export JSON (.json)</span>
                   </button>
-                  <div className="border-t border-slate-100 my-1"></div>
+                  <div className="border-t border-slate-100 my-1" />
                   <button
                     onClick={handlePrint}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-medium text-slate-900"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2.5 font-black text-slate-900"
                   >
                     <Printer className="w-4 h-4 text-slate-600" />
                     <span>Print / Save PDF</span>
@@ -335,7 +335,7 @@ export default function AdminResultsPage() {
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center space-x-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold py-2 px-3.5 rounded-xl transition-all"
+              className="inline-flex items-center space-x-1.5 bg-red-50/80 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold py-2 px-3.5 rounded-xl transition-all shadow-2xs"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Logout</span>
@@ -346,61 +346,61 @@ export default function AdminResultsPage() {
         <div className="w-full px-6 md:px-8 py-6 space-y-6 min-w-0">
           {/* Grade & Performance Overview Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+            <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs">
               <span className="text-2xs font-extrabold uppercase tracking-wider text-slate-500">Total Evaluated</span>
-              <div className="text-2xl font-black text-slate-950 mt-1">{stats?.totalAttempts || 0}</div>
-              <span className="text-[11px] text-slate-400">Total Submissions</span>
+              <div className="text-3xl font-black text-slate-950 mt-2 tracking-tight">{stats?.totalAttempts || 0}</div>
+              <span className="text-[11px] text-slate-400 mt-1 inline-block">Total Submissions</span>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-emerald-200 shadow-xs bg-emerald-50/20">
+            <div className="glossy-card rounded-3xl p-5 border border-emerald-200/80 shadow-2xs bg-gradient-to-b from-white to-emerald-50/20">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-extrabold uppercase tracking-wider text-emerald-800">Passed Candidates</span>
                 <CheckCircle className="w-4 h-4 text-emerald-600" />
               </div>
-              <div className="text-2xl font-black text-emerald-700 mt-1">{stats?.passedCount || 0}</div>
-              <span className="text-[11px] text-emerald-600 font-bold">
+              <div className="text-3xl font-black text-emerald-700 mt-2 tracking-tight">{stats?.passedCount || 0}</div>
+              <span className="text-[11px] text-emerald-600 font-bold mt-1 inline-block">
                 {stats?.totalAttempts ? Math.round((stats.passedCount / stats.totalAttempts) * 100) : 0}% Pass Rate
               </span>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-rose-200 shadow-xs bg-rose-50/20">
+            <div className="glossy-card rounded-3xl p-5 border border-rose-200/80 shadow-2xs bg-gradient-to-b from-white to-rose-50/20">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-extrabold uppercase tracking-wider text-rose-800">Below 5 (Failed)</span>
                 <XCircle className="w-4 h-4 text-rose-600" />
               </div>
-              <div className="text-2xl font-black text-rose-700 mt-1">{stats?.belowFiveCount || 0}</div>
-              <span className="text-[11px] text-rose-600 font-bold">Needs Retake</span>
+              <div className="text-3xl font-black text-rose-700 mt-2 tracking-tight">{stats?.belowFiveCount || 0}</div>
+              <span className="text-[11px] text-rose-600 font-bold mt-1 inline-block">Needs Retake</span>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs">
+            <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs">
               <span className="text-2xs font-extrabold uppercase tracking-wider text-slate-500">Average Score</span>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats?.averageScore || 0} <span className="text-xs text-slate-400 font-normal">/ 10</span></div>
-              <span className="text-[11px] text-slate-500">{stats?.averagePercentage || 0}% overall</span>
+              <div className="text-3xl font-black text-slate-900 mt-2 tracking-tight">{stats?.averageScore || 0} <span className="text-xs text-slate-400 font-normal">/ 10</span></div>
+              <span className="text-[11px] text-slate-500 mt-1 inline-block">{stats?.averagePercentage || 0}% overall</span>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-amber-200 shadow-xs bg-amber-50/20 col-span-2 md:col-span-1">
+            <div className="glossy-card rounded-3xl p-5 border border-amber-200/80 shadow-2xs bg-gradient-to-b from-white to-amber-50/20 col-span-2 md:col-span-1">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-extrabold uppercase tracking-wider text-amber-800">Highest Score</span>
                 <Star className="w-4 h-4 text-amber-600 fill-amber-500" />
               </div>
-              <div className="text-2xl font-black text-amber-700 mt-1">{stats?.highestScore || 0} <span className="text-xs text-amber-500 font-normal">/ 10</span></div>
-              <span className="text-[11px] text-amber-600 font-bold">Distinction Tier</span>
+              <div className="text-3xl font-black text-amber-700 mt-2 tracking-tight">{stats?.highestScore || 0} <span className="text-xs text-amber-500 font-normal">/ 10</span></div>
+              <span className="text-[11px] text-amber-600 font-bold mt-1 inline-block">Distinction Tier</span>
             </div>
           </div>
 
           {/* Status Tabs and Filter Controls Bar */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4">
+          <div className="glossy-card rounded-3xl p-6 border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
               {/* Status Quick Filter Tabs */}
-              <div className="flex items-center p-1 rounded-xl bg-slate-100 space-x-1">
+              <div className="flex flex-wrap items-center p-1 rounded-2xl bg-slate-100/90 gap-1 border border-slate-200/70">
                 <button
                   onClick={() => {
                     setStatusTab('all');
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     statusTab === 'all'
-                      ? 'bg-white text-slate-900 shadow-xs'
+                      ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -411,7 +411,7 @@ export default function AdminResultsPage() {
                     setStatusTab('passed');
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     statusTab === 'passed'
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : 'text-emerald-700 hover:text-emerald-900'
@@ -424,7 +424,7 @@ export default function AdminResultsPage() {
                     setStatusTab('distinction');
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     statusTab === 'distinction'
                       ? 'bg-amber-500 text-white shadow-xs'
                       : 'text-amber-700 hover:text-amber-900'
@@ -437,7 +437,7 @@ export default function AdminResultsPage() {
                     setStatusTab('failed');
                     setPage(1);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     statusTab === 'failed'
                       ? 'bg-rose-600 text-white shadow-xs'
                       : 'text-rose-700 hover:text-rose-900'
@@ -458,7 +458,7 @@ export default function AdminResultsPage() {
                     setStatusTab('all');
                     setPage(1);
                   }}
-                  className="inline-flex items-center space-x-1 text-xs text-blue-600 hover:text-blue-800 font-bold"
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs text-blue-600 hover:text-blue-800 bg-blue-50/80 hover:bg-blue-100 font-bold border border-blue-200 transition-all shadow-2xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset Filters</span>
@@ -469,7 +469,7 @@ export default function AdminResultsPage() {
             {/* Filter Inputs Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="block text-2xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Search Candidate
                 </label>
                 <div className="relative">
@@ -482,13 +482,13 @@ export default function AdminResultsPage() {
                       setPage(1);
                     }}
                     placeholder="Candidate name or email..."
-                    className="w-full pl-8.5 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
+                    className="w-full pl-8.5 pr-3 py-2 bg-slate-50/80 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-2xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Question Paper
                 </label>
                 <select
@@ -497,7 +497,7 @@ export default function AdminResultsPage() {
                     setPaperFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 bg-slate-50/80 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                 >
                   <option value="all">All Question Papers</option>
                   {questionPapersList.map((qp) => (
@@ -507,7 +507,7 @@ export default function AdminResultsPage() {
               </div>
 
               <div>
-                <label className="block text-2xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Campus
                 </label>
                 <select
@@ -516,7 +516,7 @@ export default function AdminResultsPage() {
                     setCampusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600 font-bold"
+                  className="w-full px-3 py-2 bg-slate-50/80 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                 >
                   <option value="all">All Campuses</option>
                   {campusesList.map((c) => (
@@ -526,7 +526,7 @@ export default function AdminResultsPage() {
               </div>
 
               <div>
-                <label className="block text-2xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Trainer
                 </label>
                 <select
@@ -535,7 +535,7 @@ export default function AdminResultsPage() {
                     setTrainerFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-600 font-bold"
+                  className="w-full px-3 py-2 bg-slate-50/80 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white transition-all"
                 >
                   <option value="all">All Trainers</option>
                   {trainersList.map((t) => (
@@ -547,22 +547,22 @@ export default function AdminResultsPage() {
           </div>
 
           {/* Results Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="glossy-card rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center space-x-2">
                 <Award className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
                   Candidate Score Ledger ({total} records)
                 </span>
               </div>
-              <div className="text-xs text-slate-500">
-                Page <strong className="text-slate-900">{page}</strong> of <strong className="text-slate-900">{totalPages}</strong>
+              <div className="text-xs text-slate-500 font-medium">
+                Page <strong className="text-slate-900 font-bold">{page}</strong> of <strong className="text-slate-900 font-bold">{totalPages}</strong>
               </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-600 border-collapse">
-                <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider font-extrabold text-2xs border-b border-slate-200">
+                <thead className="bg-slate-50/80 text-slate-700 uppercase tracking-wider font-extrabold text-2xs border-b border-slate-200">
                   <tr>
                     <th
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors"
@@ -611,14 +611,14 @@ export default function AdminResultsPage() {
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
-                        <span className="font-semibold text-xs">Loading assessment results...</span>
+                        <span className="font-bold text-xs">Loading assessment results...</span>
                       </td>
                     </tr>
                   ) : records.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-400">
                         <p className="font-bold text-sm text-slate-600">No Assessment Results Found</p>
-                        <p className="text-2xs text-slate-400 mt-1">Try switching tabs or clearing filters.</p>
+                        <p className="text-2xs text-slate-400 mt-1 font-medium">Try switching tabs or clearing filters. The assessment table is clean.</p>
                       </td>
                     </tr>
                   ) : (
@@ -627,33 +627,33 @@ export default function AdminResultsPage() {
                       const isPassed = r.percentage >= 50;
 
                       return (
-                        <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={r.id} className="hover:bg-blue-50/40 transition-colors">
                           <td className="py-3.5 px-4">
-                            <div className="font-bold text-slate-900">{r.candidate_name}</div>
+                            <div className="font-black text-slate-900">{r.candidate_name}</div>
                             <div className="text-2xs text-slate-500 font-mono">{r.candidate_email}</div>
-                            <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 text-[10px] font-bold">
+                            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-extrabold border border-slate-200">
                               Attempt #{r.attempt_number}
                             </span>
                           </td>
                           <td className="py-3.5 px-3">
                             <div className="flex flex-col space-y-1">
-                              <span className="inline-block w-fit px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-100">
+                              <span className="inline-block w-fit px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-extrabold text-[10px] border border-blue-100">
                                 {r.campus_name || 'N/A'}
                               </span>
-                              <span className="inline-block w-fit px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[11px] border border-indigo-100">
+                              <span className="inline-block w-fit px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-extrabold text-[10px] border border-indigo-100">
                                 {r.trainer_name || 'N/A'}
                               </span>
                             </div>
                           </td>
-                          <td className="py-3.5 px-3 font-semibold text-slate-800 max-w-[200px] truncate">
+                          <td className="py-3.5 px-3 font-bold text-slate-800 max-w-[200px] truncate">
                             {r.question_paper_title || 'SAP ABAP Assessment'}
                           </td>
                           <td className="py-3.5 px-3">
                             <div className="flex items-baseline space-x-1">
-                              <span className="font-black text-slate-950 text-base">{r.score}</span>
+                              <span className="font-black text-slate-950 text-sm">{r.score}</span>
                               <span className="text-slate-400 text-xs">/ {r.total_questions}</span>
                             </div>
-                            <div className="w-20 bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                            <div className="w-20 bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1 shadow-inner">
                               <div
                                 className={`h-full rounded-full ${
                                   isDistinction ? 'bg-amber-500' : isPassed ? 'bg-emerald-500' : 'bg-rose-500'
@@ -664,17 +664,17 @@ export default function AdminResultsPage() {
                           </td>
                           <td className="py-3.5 px-3">
                             {isDistinction ? (
-                              <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg font-extrabold text-2xs bg-amber-50 text-amber-700 border border-amber-200">
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full font-extrabold text-2xs bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
                                 <Star className="w-3 h-3 fill-amber-500 text-amber-600" />
                                 <span>DISTINCTION ({r.percentage}%)</span>
                               </span>
                             ) : isPassed ? (
-                              <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg font-extrabold text-2xs bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full font-extrabold text-2xs bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
                                 <CheckCircle className="w-3 h-3" />
                                 <span>PASSED ({r.percentage}%)</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg font-extrabold text-2xs bg-rose-50 text-rose-700 border border-rose-200">
+                              <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full font-extrabold text-2xs bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
                                 <XCircle className="w-3 h-3" />
                                 <span>BELOW 5 ({r.percentage}%)</span>
                               </span>
@@ -712,7 +712,7 @@ export default function AdminResultsPage() {
                             </Link>
                             <button
                               onClick={() => setDeleteId(r.id)}
-                              className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all"
+                              className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-all border border-rose-200"
                               title="Delete Record"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -765,10 +765,10 @@ export default function AdminResultsPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Assessment Result?</h3>
-            <p className="text-xs text-slate-600 mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-sm">
+          <div className="glossy-card rounded-3xl shadow-2xl max-w-sm w-full p-6 border border-slate-200/80 bg-white">
+            <h3 className="text-base font-black text-slate-900 mb-2">Delete Assessment Result?</h3>
+            <p className="text-xs text-slate-600 mb-6 font-medium">
               This action cannot be undone. The selected attempt record and scorecard will be permanently removed.
             </p>
 
@@ -783,9 +783,9 @@ export default function AdminResultsPage() {
               <button
                 onClick={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm"
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-sm uppercase tracking-wider"
               >
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? 'Deleting...' : 'Delete Record'}
               </button>
             </div>
           </div>

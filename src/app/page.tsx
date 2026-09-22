@@ -112,41 +112,45 @@ export default function CandidateLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans antialiased text-slate-800">
-      {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 px-6 sm:px-12 py-3.5 flex items-center justify-between shadow-2xs sticky top-0 z-30">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-slate-100/60 to-slate-100 flex flex-col justify-between font-sans antialiased text-slate-800">
+      {/* Glossy Top Header */}
+      <header className="glossy-header px-6 sm:px-12 py-3.5 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-3.5">
           <AppLogo size="md" />
           <div>
-            <h1 className="text-base font-black text-slate-900 leading-tight">{portalSettings.portal_title}</h1>
+            <h1 className="text-base font-black text-slate-900 leading-tight tracking-tight">{portalSettings.portal_title}</h1>
             <p className="text-xs text-slate-500 font-medium">{portalSettings.portal_subtitle}</p>
           </div>
+        </div>
+        <div className="hidden sm:flex items-center space-x-2 text-2xs font-extrabold uppercase tracking-wider text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-full border border-slate-200/80">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Candidate Portal Active</span>
         </div>
       </header>
 
       {/* Main Form Container */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
-          <div className="h-2 bg-blue-600"></div>
+        <div className="w-full max-w-lg glossy-card rounded-3xl overflow-hidden relative">
+          <div className="h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500"></div>
 
           <div className="p-8 sm:p-10">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 mb-4 border border-blue-100 shadow-xs">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-b from-blue-50 to-indigo-50/50 text-blue-600 mb-4 border border-blue-100/80 shadow-xs">
                 <BookOpenCheck className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{portalSettings.portal_assessment_name}</h2>
-              <p className="text-sm text-slate-500 mt-2 font-medium">{portalSettings.portal_instructions}</p>
+              <h2 className="text-2xl font-black text-slate-950 tracking-tight">{portalSettings.portal_assessment_name}</h2>
+              <p className="text-xs text-slate-500 mt-2 font-medium max-w-md mx-auto">{portalSettings.portal_instructions}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               {/* Full Name */}
               <div>
-                <label htmlFor="fullName" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Full Name <span className="text-red-500">*</span>
+                <label htmlFor="fullName" className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Full Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <User className="w-5 h-5" />
+                    <User className="w-4.5 h-4.5" />
                   </div>
                   <input
                     id="fullName"
@@ -156,17 +160,17 @@ export default function CandidateLoginPage() {
                       setName(e.target.value);
                       if (nameError) setNameError('');
                     }}
-                    placeholder=""
-                    className={`w-full pl-11 pr-4 py-2.5 rounded-xl border text-sm font-semibold text-slate-900 bg-slate-50 focus:bg-white focus:outline-none transition-all duration-200 ${
+                    placeholder="Enter candidate full name"
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-900 glossy-input ${
                       nameError
-                        ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                        : 'border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100'
+                        ? 'border-rose-500 focus:ring-2 focus:ring-rose-100 bg-rose-50/20'
+                        : ''
                     }`}
                     disabled={isSubmitting}
                   />
                 </div>
                 {nameError && (
-                  <p className="text-xs font-semibold text-red-600 mt-1 flex items-center space-x-1">
+                  <p className="text-2xs font-bold text-rose-600 mt-1.5 flex items-center space-x-1">
                     <span>⚠️</span>
                     <span>{nameError}</span>
                   </p>
@@ -175,12 +179,12 @@ export default function CandidateLoginPage() {
 
               {/* Email Address */}
               <div>
-                <label htmlFor="emailAddress" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Email Address <span className="text-red-500">*</span>
+                <label htmlFor="emailAddress" className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Email Address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Mail className="w-5 h-5" />
+                    <Mail className="w-4.5 h-4.5" />
                   </div>
                   <input
                     id="emailAddress"
@@ -190,17 +194,17 @@ export default function CandidateLoginPage() {
                       setEmail(e.target.value);
                       if (emailError) setEmailError('');
                     }}
-                    placeholder=""
-                    className={`w-full pl-11 pr-4 py-2.5 rounded-xl border text-sm font-semibold text-slate-900 bg-slate-50 focus:bg-white focus:outline-none transition-all duration-200 ${
+                    placeholder="candidate@company.com"
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-xs font-bold text-slate-900 glossy-input ${
                       emailError
-                        ? 'border-red-500 focus:ring-2 focus:ring-red-200'
-                        : 'border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100'
+                        ? 'border-rose-500 focus:ring-2 focus:ring-rose-100 bg-rose-50/20'
+                        : ''
                     }`}
                     disabled={isSubmitting}
                   />
                 </div>
                 {emailError && (
-                  <p className="text-xs font-semibold text-red-600 mt-1 flex items-center space-x-1">
+                  <p className="text-2xs font-bold text-rose-600 mt-1.5 flex items-center space-x-1">
                     <span>⚠️</span>
                     <span>{emailError}</span>
                   </p>
@@ -208,11 +212,11 @@ export default function CandidateLoginPage() {
               </div>
 
               {/* CAMPUS NAME * Radio Group */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                  CAMPUS NAME <span className="text-red-500">*</span>
+              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5">
+                <label className="block text-2xs font-black text-slate-900 uppercase tracking-wider">
+                  Campus Name <span className="text-rose-500">*</span>
                 </label>
-                <div className="space-y-2.5 pt-1">
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
                   {campusOptions.map((opt) => (
                     <label
                       key={opt}
@@ -220,10 +224,10 @@ export default function CandidateLoginPage() {
                         setCampusName(opt);
                         if (campusError) setCampusError('');
                       }}
-                      className={`flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none ${
+                      className={`flex items-center p-2.5 rounded-xl border cursor-pointer transition-all duration-150 select-none ${
                         campusName === opt
-                          ? 'bg-blue-50 border-blue-600 text-slate-900 shadow-xs'
-                          : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                          ? 'bg-blue-50/90 border-blue-600 text-blue-950 font-black shadow-xs ring-1 ring-blue-500/20'
+                          : 'bg-white border-slate-200/90 hover:border-slate-300 text-slate-700 hover:bg-slate-50/50'
                       }`}
                     >
                       <input
@@ -235,14 +239,14 @@ export default function CandidateLoginPage() {
                           setCampusName(opt);
                           if (campusError) setCampusError('');
                         }}
-                        className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer mr-3"
+                        className="w-3.5 h-3.5 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer mr-2.5"
                       />
-                      <span className="text-sm font-bold tracking-wide">{opt}</span>
+                      <span className="text-xs tracking-wide">{opt}</span>
                     </label>
                   ))}
                 </div>
                 {campusError && (
-                  <p className="text-xs font-semibold text-red-600 mt-1 flex items-center space-x-1">
+                  <p className="text-2xs font-bold text-rose-600 mt-1 flex items-center space-x-1">
                     <span>⚠️</span>
                     <span>{campusError}</span>
                   </p>
@@ -250,11 +254,11 @@ export default function CandidateLoginPage() {
               </div>
 
               {/* TRAINER NAME * Radio Group */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <label className="block text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                  TRAINER NAME <span className="text-red-500">*</span>
+              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5">
+                <label className="block text-2xs font-black text-slate-900 uppercase tracking-wider">
+                  Trainer Name <span className="text-rose-500">*</span>
                 </label>
-                <div className="space-y-2.5 pt-1">
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
                   {trainerOptions.map((opt) => (
                     <label
                       key={opt}
@@ -262,10 +266,10 @@ export default function CandidateLoginPage() {
                         setTrainerName(opt);
                         if (trainerError) setTrainerError('');
                       }}
-                      className={`flex items-center p-3 rounded-xl border cursor-pointer transition-all duration-150 select-none ${
+                      className={`flex items-center p-2.5 rounded-xl border cursor-pointer transition-all duration-150 select-none ${
                         trainerName === opt
-                          ? 'bg-blue-50 border-blue-600 text-slate-900 shadow-xs'
-                          : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                          ? 'bg-indigo-50/90 border-indigo-600 text-indigo-950 font-black shadow-xs ring-1 ring-indigo-500/20'
+                          : 'bg-white border-slate-200/90 hover:border-slate-300 text-slate-700 hover:bg-slate-50/50'
                       }`}
                     >
                       <input
@@ -277,14 +281,14 @@ export default function CandidateLoginPage() {
                           setTrainerName(opt);
                           if (trainerError) setTrainerError('');
                         }}
-                        className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer mr-3"
+                        className="w-3.5 h-3.5 text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer mr-2.5"
                       />
-                      <span className="text-sm font-bold tracking-wide">{opt}</span>
+                      <span className="text-xs tracking-wide">{opt}</span>
                     </label>
                   ))}
                 </div>
                 {trainerError && (
-                  <p className="text-xs font-semibold text-red-600 mt-1 flex items-center space-x-1">
+                  <p className="text-2xs font-bold text-rose-600 mt-1 flex items-center space-x-1">
                     <span>⚠️</span>
                     <span>{trainerError}</span>
                   </p>
@@ -295,7 +299,7 @@ export default function CandidateLoginPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200 flex items-center justify-center space-x-2 text-sm disabled:opacity-70 disabled:cursor-not-allowed pt-3"
+                className="w-full glossy-button-primary text-white font-black py-3.5 px-6 rounded-xl transition-all duration-150 flex items-center justify-center space-x-2 text-xs uppercase tracking-wider disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
               >
                 <span>{isSubmitting ? 'Starting Assessment...' : 'Start Assessment'}</span>
                 {!isSubmitting && <ArrowRight className="w-4 h-4 ml-1" />}
@@ -306,7 +310,7 @@ export default function CandidateLoginPage() {
       </div>
 
       {/* Footer */}
-      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200 bg-white">
+      <footer className="py-4 text-center text-xs text-slate-500 border-t border-slate-200/80 bg-white/70 backdrop-blur-md">
         © {new Date().getFullYear()} {portalSettings.portal_title || 'SAP Online Test System'}. All rights reserved.
       </footer>
     </main>

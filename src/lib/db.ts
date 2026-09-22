@@ -716,9 +716,20 @@ export function getCampusBreakdown() {
 }
 
 export function deleteAssessmentResult(id: string): boolean {
+  if (id === 'ALL') {
+    const stmt = db.prepare(`DELETE FROM assessment_results`);
+    const res = stmt.run();
+    return true;
+  }
   const stmt = db.prepare(`DELETE FROM assessment_results WHERE id = ?`);
   const res = stmt.run(id);
   return res.changes > 0;
+}
+
+export function deleteAllAssessmentResults(): number {
+  const stmt = db.prepare(`DELETE FROM assessment_results`);
+  const res = stmt.run();
+  return res.changes;
 }
 
 export interface TrainerRecord {

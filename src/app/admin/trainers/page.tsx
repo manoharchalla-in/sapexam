@@ -221,13 +221,13 @@ export default function TrainersAdminPage() {
   if (authError) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="min-h-screen bg-slate-50/70 font-sans text-slate-800">
       <AdminSidebar />
       <div className="lg:pl-64 flex flex-col min-h-screen">
         {/* Top Header */}
-        <header className="bg-white border-b border-slate-200 py-4 px-6 md:px-10 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
+        <header className="glossy-header py-4 px-6 md:px-10 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 shadow-2xs">
               <UserCheck className="w-5 h-5" />
             </div>
             <div>
@@ -245,7 +245,7 @@ export default function TrainersAdminPage() {
               setShowAddTrainerModal(true);
               setCreateError('');
             }}
-            className="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-sm transition-all"
+            className="inline-flex items-center space-x-1.5 glossy-button-primary text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow-xs transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Create New Trainer</span>
@@ -255,33 +255,33 @@ export default function TrainersAdminPage() {
         <div className="p-6 md:p-10 space-y-6 max-w-7xl w-full">
           {/* Quick Stats Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center space-x-4">
-              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+            <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs flex items-center space-x-4">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 shadow-2xs">
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Active Trainers</span>
-                <span className="text-2xl font-black text-slate-900">{trainersList.length}</span>
+                <span className="text-2xs font-extrabold text-slate-500 uppercase tracking-wider block">Active Trainers</span>
+                <span className="text-3xl font-black text-slate-950 tracking-tight">{trainersList.length}</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center space-x-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+            <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs flex items-center space-x-4">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100 shadow-2xs">
                 <Award className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Attempts Tracked</span>
-                <span className="text-2xl font-black text-slate-900">{totalTrainerAttempts}</span>
+                <span className="text-2xs font-extrabold text-slate-500 uppercase tracking-wider block">Total Attempts Tracked</span>
+                <span className="text-3xl font-black text-slate-950 tracking-tight">{totalTrainerAttempts}</span>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-center space-x-4">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <div className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs flex items-center space-x-4">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-200 shadow-2xs">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Trainer Security</span>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                <span className="text-2xs font-extrabold text-slate-500 uppercase tracking-wider block">Trainer Security</span>
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 inline-block mt-1">
                   Dedicated Isolation Active
                 </span>
               </div>
@@ -289,7 +289,7 @@ export default function TrainersAdminPage() {
           </div>
 
           {/* Search toolbar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between gap-3">
+          <div className="glossy-card p-4 rounded-3xl border border-slate-200/80 shadow-2xs flex items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
               <input
@@ -297,7 +297,7 @@ export default function TrainersAdminPage() {
                 placeholder="Search trainers by name or username..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-600 focus:bg-white transition-all"
               />
             </div>
 
@@ -308,18 +308,18 @@ export default function TrainersAdminPage() {
 
           {/* Trainers Cards Grid */}
           {loading ? (
-            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
+            <div className="p-12 text-center glossy-card rounded-3xl border border-slate-200/80">
               <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-3" />
               <p className="text-xs font-bold text-slate-500">Loading Trainer Panels & Credentials...</p>
             </div>
           ) : filteredTrainers.length === 0 ? (
-            <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
+            <div className="p-12 text-center glossy-card rounded-3xl border border-slate-200/80">
               <UserCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h3 className="text-sm font-bold text-slate-800">No Trainers Found</h3>
               <p className="text-xs text-slate-500 mt-1 mb-4">Add a new trainer to generate credentials and dedicated panels.</p>
               <button
                 onClick={() => setShowAddTrainerModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition-all"
+                className="glossy-button-primary text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all shadow-xs"
               >
                 Create Trainer
               </button>
@@ -335,13 +335,13 @@ export default function TrainersAdminPage() {
                 return (
                   <div
                     key={trainerItem.id}
-                    className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
+                    className="glossy-card rounded-3xl p-5 border border-slate-200/80 shadow-2xs hover:border-indigo-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group bg-white"
                   >
                     <div>
                       {/* Top badge & options */}
                       <div className="flex items-center justify-between mb-3">
-                        <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-extrabold text-xs">
-                          TRAINER
+                        <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-extrabold text-[10px] border border-indigo-100">
+                          TRAINER PANEL
                         </span>
 
                         <div className="flex items-center space-x-1">
@@ -350,7 +350,7 @@ export default function TrainersAdminPage() {
                               setEditingTrainer(trainerItem);
                               setEditPasswordValue(trainerItem.password);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                             title="Change Password"
                           >
                             <KeyRound className="w-3.5 h-3.5" />
@@ -358,7 +358,7 @@ export default function TrainersAdminPage() {
 
                           <button
                             onClick={() => setDeleteTrainerModal(trainerItem)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                             title="Delete Trainer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -372,16 +372,16 @@ export default function TrainersAdminPage() {
                       </h3>
 
                       {/* Credentials box */}
-                      <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 text-xs">
+                      <div className="mt-3 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-1.5 text-xs shadow-2xs">
                         <div className="flex items-center justify-between text-slate-600 font-medium">
-                          <span className="text-[11px] text-slate-400 uppercase font-bold">Username:</span>
-                          <span className="font-bold text-slate-800 font-mono">{trainerItem.username}</span>
+                          <span className="text-[10px] text-slate-400 uppercase font-extrabold">Username:</span>
+                          <span className="font-bold text-slate-900 font-mono">{trainerItem.username}</span>
                         </div>
 
                         <div className="flex items-center justify-between text-slate-600 font-medium">
-                          <span className="text-[11px] text-slate-400 uppercase font-bold">Password:</span>
+                          <span className="text-[10px] text-slate-400 uppercase font-extrabold">Password:</span>
                           <div className="flex items-center space-x-1.5">
-                            <span className="font-bold text-slate-800 font-mono">
+                            <span className="font-bold text-slate-900 font-mono">
                               {isPasswordRevealed ? trainerItem.password : '••••••••'}
                             </span>
                             <button
@@ -397,16 +397,16 @@ export default function TrainersAdminPage() {
 
                       {/* Stats numbers */}
                       <div className="grid grid-cols-3 gap-2 text-center mt-3 pt-3 border-t border-slate-100">
-                        <div className="p-1.5 bg-slate-50 rounded-lg">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase">Attempts</span>
+                        <div className="p-2 bg-slate-50/80 rounded-xl border border-slate-100">
+                          <span className="block text-[10px] font-extrabold text-slate-400 uppercase">Attempts</span>
                           <span className="text-xs font-black text-slate-900">{trainerData.total}</span>
                         </div>
-                        <div className="p-1.5 bg-slate-50 rounded-lg">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase">Avg Score</span>
+                        <div className="p-2 bg-slate-50/80 rounded-xl border border-slate-100">
+                          <span className="block text-[10px] font-extrabold text-slate-400 uppercase">Avg Score</span>
                           <span className="text-xs font-black text-slate-900">{trainerData.avgScore}</span>
                         </div>
-                        <div className="p-1.5 bg-slate-50 rounded-lg">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase">Passed</span>
+                        <div className="p-2 bg-slate-50/80 rounded-xl border border-slate-100">
+                          <span className="block text-[10px] font-extrabold text-slate-400 uppercase">Passed</span>
                           <span className="text-xs font-black text-emerald-600">{trainerData.passed}</span>
                         </div>
                       </div>
@@ -419,7 +419,7 @@ export default function TrainersAdminPage() {
                         className={`w-full inline-flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all border ${
                           isCopied
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                            : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 shadow-2xs'
                         }`}
                       >
                         {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
@@ -428,7 +428,7 @@ export default function TrainersAdminPage() {
 
                       <Link
                         href={`/admin/trainer/${trainerItem.username}`}
-                        className="w-full inline-flex items-center justify-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow-xs transition-all"
+                        className="w-full inline-flex items-center justify-center space-x-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow-xs transition-all"
                       >
                         <span>Open Dedicated Panel</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -444,11 +444,11 @@ export default function TrainersAdminPage() {
 
       {/* Create Trainer Modal */}
       {showAddTrainerModal && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-6">
+        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="glossy-card bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200/80 shadow-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
+                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 shadow-2xs">
                   <UserCheck className="w-6 h-6" />
                 </div>
                 <div>
@@ -458,21 +458,21 @@ export default function TrainersAdminPage() {
               </div>
               <button
                 onClick={() => setShowAddTrainerModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {createError && (
-              <div className="p-3.5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-semibold">
+              <div className="p-3.5 bg-red-50 text-red-600 border border-red-200 rounded-2xl text-xs font-semibold">
                 {createError}
               </div>
             )}
 
             <form onSubmit={handleCreateTrainer} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Trainer Display Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -481,12 +481,12 @@ export default function TrainersAdminPage() {
                   onChange={(e) => setNewTrainerName(e.target.value)}
                   placeholder="e.g. SITA RAMA RAJU"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 bg-white focus:outline-none focus:border-indigo-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 bg-slate-50/80 focus:outline-none focus:border-indigo-600 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   Initial Password
                 </label>
                 <input
@@ -494,7 +494,7 @@ export default function TrainersAdminPage() {
                   value={newTrainerPassword}
                   onChange={(e) => setNewTrainerPassword(e.target.value)}
                   placeholder="123"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 bg-white focus:outline-none focus:border-indigo-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 bg-slate-50/80 focus:outline-none focus:border-indigo-600 focus:bg-white"
                 />
               </div>
 
@@ -531,11 +531,11 @@ export default function TrainersAdminPage() {
 
       {/* Edit Password Modal */}
       {editingTrainer && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-6">
+        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="glossy-card bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200/80 shadow-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
+                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 shadow-2xs">
                   <KeyRound className="w-6 h-6" />
                 </div>
                 <div>
@@ -545,7 +545,7 @@ export default function TrainersAdminPage() {
               </div>
               <button
                 onClick={() => setEditingTrainer(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -553,7 +553,7 @@ export default function TrainersAdminPage() {
 
             <form onSubmit={handleSavePassword} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                <label className="block text-2xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                   New Password <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -562,7 +562,7 @@ export default function TrainersAdminPage() {
                   onChange={(e) => setEditPasswordValue(e.target.value)}
                   placeholder="Enter new password"
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 bg-white focus:outline-none focus:border-indigo-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 bg-slate-50/80 focus:outline-none focus:border-indigo-600 focus:bg-white"
                 />
               </div>
 
@@ -599,10 +599,10 @@ export default function TrainersAdminPage() {
 
       {/* Delete Trainer Confirmation Modal */}
       {deleteTrainerModal && (
-        <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl space-y-5">
+        <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="glossy-card bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200/80 shadow-2xl space-y-5">
             <div className="flex items-center space-x-3">
-              <div className="p-3 bg-red-50 text-red-600 rounded-2xl">
+              <div className="p-3 bg-red-50 text-red-600 rounded-2xl border border-red-200">
                 <Trash2 className="w-6 h-6" />
               </div>
               <div>
@@ -611,7 +611,7 @@ export default function TrainersAdminPage() {
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <p className="text-xs text-slate-600 bg-slate-50/90 p-3.5 rounded-2xl border border-slate-200 font-medium">
               Are you sure you want to remove <strong className="text-slate-900">{deleteTrainerModal.display_name}</strong>?
             </p>
 
@@ -625,7 +625,7 @@ export default function TrainersAdminPage() {
               <button
                 onClick={handleDeleteTrainer}
                 disabled={isDeletingTrainer}
-                className="inline-flex items-center space-x-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2.5 px-5 rounded-xl shadow-xs transition-all disabled:opacity-50"
+                className="inline-flex items-center space-x-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black py-2.5 px-5 rounded-xl shadow-xs transition-all disabled:opacity-50 uppercase tracking-wider"
               >
                 {isDeletingTrainer ? 'Deleting...' : 'Delete Trainer'}
               </button>
