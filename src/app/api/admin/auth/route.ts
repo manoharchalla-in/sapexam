@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
         username: 'admin',
         displayName: 'Super Admin',
         panelTitle: 'Super Admin Master Control',
-        redirect: '/admin/superadmin',
+        redirect: '/superadmin',
         message: 'Master Super Admin Authenticated successfully',
       });
       response.headers.set('Set-Cookie', getAdminCookieHeader('admin_token_admin'));
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
           username: cleanUser,
           displayName,
           panelTitle: `${displayName}'s Admin Panel`,
-          redirect: '/admin',
+          redirect: `/${cleanUser}admin`,
           message: `${displayName}'s Admin Authenticated successfully`,
         });
         response.headers.set('Set-Cookie', getAdminCookieHeader(token));
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         username: cleanUser,
         displayName,
         panelTitle: `${displayName}'s Admin Panel`,
-        redirect: '/admin',
+        redirect: `/${cleanUser}admin`,
         message: `${displayName}'s Admin Authenticated successfully`,
       });
       response.headers.set('Set-Cookie', getAdminCookieHeader(token));

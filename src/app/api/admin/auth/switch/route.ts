@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       success: true,
       switchedTo: cleanTarget,
       displayName: adminConfig.displayName,
-      redirect: cleanTarget === 'admin' ? '/admin/superadmin' : '/admin',
+      redirect: cleanTarget === 'admin' ? '/superadmin' : `/${cleanTarget}admin`,
       message: `Switched active workspace to ${adminConfig.displayName}`,
     });
 
