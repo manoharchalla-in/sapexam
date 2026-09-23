@@ -263,16 +263,19 @@ if (!portalTitle) {
   db.prepare(`INSERT INTO portal_settings (key, value) VALUES ('portal_instructions', 'Enter your details to begin the assessment.')`).run();
 }
 
-// Seed default trainers if empty
-const trainerCount = (db.prepare(`SELECT COUNT(*) as count FROM trainers`).get() as { count: number })?.count || 0;
-if (trainerCount === 0) {
-  const seedTrainers = ['APPALARAJU', 'NOOKARAJU', 'DAKSHAYINI', 'NANI'];
-  const insertStmt = db.prepare(`INSERT OR IGNORE INTO trainers (username, display_name, password, created_at) VALUES (?, ?, '123', ?)`);
-  const now = new Date().toISOString();
-  seedTrainers.forEach((t) => {
-    insertStmt.run(t.toLowerCase(), t, now);
-  });
-}
+// Seed default trainers if missing
+const defaultSeedTrainers = [
+  { username: 'nani', display_name: 'NANI', password: '123' },
+  { username: 'nokaraju', display_name: 'NOKARAJU', password: '123' },
+  { username: 'dakshiyani', display_name: 'DAKSHIYANI', password: '123' },
+  { username: 'apparaju', display_name: 'APPARAJU', password: '123' },
+];
+
+const insertTrainerStmt = db.prepare(`INSERT OR IGNORE INTO trainers (username, display_name, password, created_at) VALUES (?, ?, ?, ?)`);
+const nowTrainerSeed = new Date().toISOString();
+defaultSeedTrainers.forEach((t) => {
+  insertTrainerStmt.run(t.username, t.display_name, t.password, nowTrainerSeed);
+});
 
 // Seed default Published Question Paper if empty
 const qpCount = (db.prepare(`SELECT COUNT(*) as count FROM question_papers`).get() as { count: number })?.count || 0;
