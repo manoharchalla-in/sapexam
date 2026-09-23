@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -17,14 +17,34 @@ import {
 } from 'lucide-react';
 import AppLogo from '@/components/common/AppLogo';
 
-interface SidebarProps {
-  currentRole?: string;
+interface AdminSessionInfo {
+  username?: string;
+  displayName?: string;
+  panelTitle?: string;
+  initials?: string;
 }
 
-export default function AdminSidebar({ currentRole = 'Main Super Admin' }: SidebarProps) {
+interface SidebarProps {
+  currentRole?: string;
+  adminName?: string;
+}
+
+export default function AdminSidebar({ currentRole = 'Main Super Admin', adminName }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [session, setSession] = useState<AdminSessionInfo | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/auth')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.session) {
+          setSession(data.session);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     await fetch('/api/admin/auth', { method: 'DELETE' });
@@ -79,7 +99,9 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
               <AppLogo size="md" />
             </div>
             <div>
-              <h1 className="text-xs font-black text-slate-950 tracking-tight">Main Admin Panel</h1>
+              <h1 className="text-xs font-black text-slate-950 tracking-tight">
+                {session?.panelTitle || (adminName ? `${adminName}'s Admin Panel` : 'Main Admin Panel')}
+              </h1>
               <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full mt-0.5 border border-emerald-100">
                 <ShieldCheck className="w-3 h-3 text-emerald-600" />
                 <span>Enterprise Mode</span>
@@ -129,11 +151,13 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin' }: Sideb
         {/* Footer / Account Actions */}
         <div className="p-4 border-t border-slate-100/90 space-y-2.5 bg-gradient-to-t from-slate-50/70 to-transparent">
           <div className="p-3 rounded-2xl bg-white border border-slate-200/80 flex items-center space-x-3 shadow-2xs">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-2xs">
-              SA
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-2xs">
+              {session?.initials || (session?.displayName ? session.displayName.slice(0, 2).toUpperCase() : 'SA')}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-900 truncate">Super Admin</p>
+              <p className="text-xs font-bold text-slate-900 truncate">
+                {session?.displayName || 'Super Admin'}
+              </p>
               <p className="text-[10px] text-emerald-600 truncate font-semibold flex items-center space-x-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
                 <span>System Active</span>
