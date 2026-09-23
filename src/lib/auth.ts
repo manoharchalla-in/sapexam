@@ -44,18 +44,19 @@ export const DEFAULT_ADMIN_ACCOUNTS: Record<string, AdminUserConfig> = {
   admin: {
     username: 'admin',
     displayName: 'Super Admin',
-    panelTitle: 'Main Admin Panel',
+    panelTitle: 'Super Admin Master Control',
     initials: 'SA',
     themeColor: 'from-blue-600 to-sky-600',
   },
 };
 
 export interface AdminSession {
-  role: 'super_admin' | 'trainer';
+  role: 'super_admin' | 'admin';
   username: string;
   displayName: string;
   panelTitle: string;
   initials: string;
+  isSuperAdmin: boolean;
 }
 
 export async function getAdminSession(): Promise<AdminSession | null> {
@@ -66,6 +67,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   // 1. Check direct admin_token_<username>
   if (sessionVal.startsWith('admin_token_')) {
     const rawUser = sessionVal.replace('admin_token_', '').toLowerCase();
+    const isMaster = rawUser === 'admin';
     const adminConfig = DEFAULT_ADMIN_ACCOUNTS[rawUser] || {
       username: rawUser,
       displayName: rawUser.charAt(0).toUpperCase() + rawUser.slice(1),
@@ -75,11 +77,12 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     };
 
     return {
-      role: 'super_admin',
+      role: isMaster ? 'super_admin' : 'admin',
       username: adminConfig.username,
       displayName: adminConfig.displayName,
       panelTitle: adminConfig.panelTitle,
       initials: adminConfig.initials,
+      isSuperAdmin: isMaster,
     };
   }
 
@@ -89,24 +92,30 @@ export async function getAdminSession(): Promise<AdminSession | null> {
       role: 'super_admin',
       username: 'admin',
       displayName: 'Super Admin',
-      panelTitle: 'Main Admin Panel',
+      panelTitle: 'Super Admin Master Control',
       initials: 'SA',
+      isSuperAdmin: true,
     };
   }
 
-  // 3. Trainer session
+  // 3. Backward compatibility with legacy trainer_token_
   if (sessionVal.startsWith('trainer_token_')) {
-    const rawUsername = sessionVal.replace('trainer_token_', '');
-    const trainer = getTrainerByUsername(rawUsername);
-    if (trainer) {
-      return {
-        role: 'trainer',
-        username: trainer.username,
-        displayName: trainer.display_name,
-        panelTitle: `${trainer.display_name}'s Trainer Hub`,
-        initials: trainer.display_name.slice(0, 2).toUpperCase(),
-      };
-    }
+    const rawUsername = sessionVal.replace('trainer_token_', '').toLowerCase();
+    const adminConfig = DEFAULT_ADMIN_ACCOUNTS[rawUsername] || {
+      username: rawUsername,
+      displayName: rawUsername.charAt(0).toUpperCase() + rawUsername.slice(1),
+      panelTitle: `${rawUsername.charAt(0).toUpperCase() + rawUsername.slice(1)}'s Admin Panel`,
+      initials: rawUsername.slice(0, 2).toUpperCase(),
+      themeColor: 'from-blue-600 to-indigo-600',
+    };
+    return {
+      role: 'admin',
+      username: adminConfig.username,
+      displayName: adminConfig.displayName,
+      panelTitle: adminConfig.panelTitle,
+      initials: adminConfig.initials,
+      isSuperAdmin: false,
+    };
   }
 
   return null;

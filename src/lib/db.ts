@@ -2900,6 +2900,134 @@ export function getExamByCollegeAndExamSlug(
   };
 }
 
+export interface AdminOverviewData {
+  username: string;
+  displayName: string;
+  panelTitle: string;
+  initials: string;
+  themeColor: string;
+  totalColleges: number;
+  totalStudents: number;
+  totalExams: number;
+  totalAttempts: number;
+  passedAttempts: number;
+  passRate: number;
+  colleges: Array<{
+    id: number;
+    folder_id: string;
+    name: string;
+    code: string;
+    description: string;
+    created_at: string;
+    student_count: number;
+    exam_count: number;
+  }>;
+}
+
+export function getAllAdminsOverview() {
+  const adminsList = [
+    { username: 'nani', displayName: 'Nani', panelTitle: "Nani's Admin Panel", initials: 'NA', themeColor: 'from-blue-600 to-indigo-600' },
+    { username: 'nokaraju', displayName: 'Nokaraju', panelTitle: "Nokaraju's Admin Panel", initials: 'NO', themeColor: 'from-emerald-600 to-teal-600' },
+    { username: 'dakshiyani', displayName: 'Dakshiyani', panelTitle: "Dakshiyani's Admin Panel", initials: 'DA', themeColor: 'from-purple-600 to-pink-600' },
+    { username: 'apparaju', displayName: 'Apparaju', panelTitle: "Apparaju's Admin Panel", initials: 'AP', themeColor: 'from-amber-600 to-orange-600' },
+  ];
+
+  let totalWorkspaces = 0;
+  let totalStudents = 0;
+  let totalExams = 0;
+  let totalAttempts = 0;
+  let totalPassed = 0;
+
+  const resultAdmins: AdminOverviewData[] = adminsList.map((adm) => {
+    const dbFileName = `sapexam_${adm.username}.db`;
+    const targetPath = path.join(process.cwd(), 'data', dbFileName);
+    let targetDb: any = db;
+    if (fs.existsSync(targetPath)) {
+      try {
+        targetDb = new Database(targetPath);
+      } catch (e) {
+        targetDb = db;
+      }
+    }
+
+    try {
+      const collegesStmt = targetDb.prepare(`
+        SELECT c.*, 
+          (SELECT COUNT(*) FROM college_students cs WHERE cs.college_id = c.id) as student_count,
+          (SELECT COUNT(*) FROM college_exams ce WHERE ce.college_id = c.id) as exam_count
+        FROM colleges c
+        ORDER BY c.created_at DESC
+      `);
+      const colleges = (collegesStmt.all() || []) as any[];
+
+      const studentCountStmt = targetDb.prepare(`SELECT COUNT(*) as count FROM college_students`);
+      const studentCount = (studentCountStmt.get() as { count: number })?.count || 0;
+
+      const examCountStmt = targetDb.prepare(`SELECT COUNT(*) as count FROM college_exams`);
+      const examCount = (examCountStmt.get() as { count: number })?.count || 0;
+
+      const attemptCountStmt = targetDb.prepare(`SELECT COUNT(*) as count FROM college_exam_attempts`);
+      const attemptCount = (attemptCountStmt.get() as { count: number })?.count || 0;
+
+      const passedCountStmt = targetDb.prepare(`SELECT COUNT(*) as count FROM college_exam_attempts WHERE result_status = 'PASS'`);
+      const passedCount = (passedCountStmt.get() as { count: number })?.count || 0;
+
+      const passRate = attemptCount > 0 ? Math.round((passedCount / attemptCount) * 100) : 0;
+
+      totalWorkspaces += colleges.length;
+      totalStudents += studentCount;
+      totalExams += examCount;
+      totalAttempts += attemptCount;
+      totalPassed += passedCount;
+
+      return {
+        username: adm.username,
+        displayName: adm.displayName,
+        panelTitle: adm.panelTitle,
+        initials: adm.initials,
+        themeColor: adm.themeColor,
+        totalColleges: colleges.length,
+        totalStudents: studentCount,
+        totalExams: examCount,
+        totalAttempts: attemptCount,
+        passedAttempts: passedCount,
+        passRate,
+        colleges,
+      };
+    } catch (err) {
+      return {
+        username: adm.username,
+        displayName: adm.displayName,
+        panelTitle: adm.panelTitle,
+        initials: adm.initials,
+        themeColor: adm.themeColor,
+        totalColleges: 0,
+        totalStudents: 0,
+        totalExams: 0,
+        totalAttempts: 0,
+        passedAttempts: 0,
+        passRate: 0,
+        colleges: [],
+      };
+    }
+  });
+
+  const overallPassRate = totalAttempts > 0 ? Math.round((totalPassed / totalAttempts) * 100) : 0;
+
+  return {
+    admins: resultAdmins,
+    globalTotals: {
+      totalWorkspaces,
+      totalStudents,
+      totalExams,
+      totalAttempts,
+      totalPassed,
+      overallPassRate,
+    },
+  };
+}
+
 export default db;
+
 
 

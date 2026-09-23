@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  UserCheck,
   LogOut,
   Menu,
   X,
@@ -14,6 +13,7 @@ import {
   Settings,
   Sparkles,
   FolderTree,
+  Crown,
 } from 'lucide-react';
 import AppLogo from '@/components/common/AppLogo';
 
@@ -22,6 +22,7 @@ interface AdminSessionInfo {
   displayName?: string;
   panelTitle?: string;
   initials?: string;
+  isSuperAdmin?: boolean;
 }
 
 interface SidebarProps {
@@ -52,9 +53,11 @@ export default function AdminSidebar({ currentRole = 'Main Super Admin', adminNa
   };
 
   const navItems = [
+    ...(session?.isSuperAdmin || session?.username === 'admin'
+      ? [{ label: 'Master Super Admin Control', href: '/admin/superadmin', icon: Crown }]
+      : []),
     { label: 'Dashboard & Overview', href: '/admin', icon: LayoutDashboard },
-    { label: 'Folders', href: '/admin/folders', icon: FolderTree },
-    { label: 'Trainer Panels & Credentials', href: '/admin/trainers', icon: UserCheck },
+    { label: 'Workspaces Directory', href: '/admin/folders', icon: FolderTree },
     { label: 'Landing Page & Settings', href: '/admin/settings', icon: Settings },
   ];
 

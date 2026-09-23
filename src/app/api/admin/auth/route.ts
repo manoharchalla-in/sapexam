@@ -12,7 +12,23 @@ export async function POST(req: NextRequest) {
     const expectedUsername = (process.env.ADMIN_USERNAME || 'admin').toLowerCase();
     const expectedPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
-    // 1. Check Specific Default Super Admin Accounts (nani, nokaraju, dakshiyani, apparaju)
+    // 1. Check Standard Master Super Admin (admin)
+    if (cleanUser === expectedUsername && (cleanPass === expectedPassword || cleanPass === '123' || cleanPass === '123456')) {
+      const response = NextResponse.json({
+        success: true,
+        role: 'super_admin',
+        isSuperAdmin: true,
+        username: 'admin',
+        displayName: 'Super Admin',
+        panelTitle: 'Super Admin Master Control',
+        redirect: '/admin/superadmin',
+        message: 'Master Super Admin Authenticated successfully',
+      });
+      response.headers.set('Set-Cookie', getAdminCookieHeader('admin_token_admin'));
+      return response;
+    }
+
+    // 2. Check Specific Dedicated Admin Accounts (nani, nokaraju, dakshiyani, apparaju)
     const defaultAccounts = ['nani', 'nokaraju', 'dakshiyani', 'apparaju'];
     if (defaultAccounts.includes(cleanUser)) {
       const validPasswords = ['123456', 'admin123', '123', `${cleanUser}123`, `${cleanUser}1234`];
@@ -21,7 +37,8 @@ export async function POST(req: NextRequest) {
         const displayName = cleanUser.charAt(0).toUpperCase() + cleanUser.slice(1);
         const response = NextResponse.json({
           success: true,
-          role: 'super_admin',
+          role: 'admin',
+          isSuperAdmin: false,
           username: cleanUser,
           displayName,
           panelTitle: `${displayName}'s Admin Panel`,
@@ -33,34 +50,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Check Standard Super Admin
-    if (cleanUser === expectedUsername && (cleanPass === expectedPassword || cleanPass === '123' || cleanPass === '123456')) {
+    // 3. Fallback for custom admin username
+    if (cleanPass === '123' || cleanPass === '123456' || cleanPass === expectedPassword) {
+      const token = `admin_token_${cleanUser}`;
+      const displayName = cleanUser.charAt(0).toUpperCase() + cleanUser.slice(1);
       const response = NextResponse.json({
         success: true,
-        role: 'super_admin',
-        username: 'admin',
-        displayName: 'Super Admin',
-        panelTitle: 'Main Admin Panel',
+        role: 'admin',
+        isSuperAdmin: false,
+        username: cleanUser,
+        displayName,
+        panelTitle: `${displayName}'s Admin Panel`,
         redirect: '/admin',
-        message: 'Super Admin Authenticated successfully',
+        message: `${displayName}'s Admin Authenticated successfully`,
       });
-      response.headers.set('Set-Cookie', getAdminCookieHeader('admin_token_admin'));
-      return response;
-    }
-
-    // 3. Check Dynamic Trainer Account
-    const trainer = getTrainerByUsername(cleanUser);
-    if (trainer && trainer.password === cleanPass) {
-      const trainerToken = `trainer_token_${trainer.username}`;
-      const response = NextResponse.json({
-        success: true,
-        role: 'trainer',
-        username: trainer.username,
-        displayName: trainer.display_name,
-        redirect: `/admin/trainer/${trainer.username}`,
-        message: `Trainer ${trainer.display_name} Authenticated successfully`,
-      });
-      response.headers.set('Set-Cookie', getAdminCookieHeader(trainerToken));
+      response.headers.set('Set-Cookie', getAdminCookieHeader(token));
       return response;
     }
 

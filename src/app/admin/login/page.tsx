@@ -7,6 +7,15 @@ import AppLogo from '@/components/common/AppLogo';
 
 const ADMIN_PROFILES = [
   {
+    username: 'admin',
+    displayName: 'Super Admin',
+    initials: 'SA',
+    roleLabel: 'Master Control',
+    defaultPass: 'admin123',
+    gradient: 'from-amber-600 to-orange-600',
+    borderColor: 'hover:border-amber-400 focus:ring-amber-400',
+  },
+  {
     username: 'nani',
     displayName: 'Nani',
     initials: 'NA',
@@ -39,8 +48,8 @@ const ADMIN_PROFILES = [
     initials: 'AP',
     roleLabel: 'Admin Panel',
     defaultPass: '123456',
-    gradient: 'from-amber-600 to-orange-600',
-    borderColor: 'hover:border-amber-400 focus:ring-amber-400',
+    gradient: 'from-rose-600 to-red-600',
+    borderColor: 'hover:border-rose-400 focus:ring-rose-400',
   },
 ];
 
@@ -123,18 +132,18 @@ function AdminLoginForm() {
             <p className="text-xs text-slate-500 mt-1 font-medium">SAP ABAP Assessment & Evaluation Control</p>
           </div>
 
-          {/* 4 Default Admin Profiles Fast Switcher */}
+          {/* 5 Executive Admin Profiles Fast Switcher */}
           <div className="mb-6 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-2xs font-extrabold text-slate-500 uppercase tracking-wider">
                 Select Admin Profile
               </span>
               <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-full">
-                4 Default Admin Portals
+                4 Admin Portals + Super Admin
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {ADMIN_PROFILES.map((profile) => {
                 const isSelected = username.toLowerCase() === profile.username;
                 return (
