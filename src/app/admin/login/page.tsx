@@ -223,11 +223,6 @@ function AdminLoginForm() {
               </div>
             </div>
 
-            <div className="bg-slate-50/90 p-3 rounded-xl border border-slate-200/80 text-[11px] text-slate-600 flex items-center justify-between">
-              <div>Default Password: <strong className="text-slate-900 font-mono">123456</strong> or <strong className="text-slate-900 font-mono">admin123</strong></div>
-              <div className="text-[10px] text-slate-400 font-medium">Auto-syncs panel name</div>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
